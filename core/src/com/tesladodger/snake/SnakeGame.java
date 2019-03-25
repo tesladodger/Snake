@@ -76,9 +76,9 @@ public class SnakeGame extends ApplicationAdapter {
     private StringBuilder strB;
 
     private long startTime;
-	
-	@Override
-	public void create() {
+
+    @Override
+    public void create() {
 
         shapeRenderer = new ShapeRenderer();
 
@@ -129,10 +129,10 @@ public class SnakeGame extends ApplicationAdapter {
         stage.addActor(scoreLabel);
 
         startTime = System.currentTimeMillis();
-	}
+    }
 
-	@Override
-	public void render() {
+    @Override
+    public void render() {
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
@@ -229,9 +229,9 @@ public class SnakeGame extends ApplicationAdapter {
             scoreLabel = updateScore();
         }
 
-	}
+    }
 
-	private Label updateScore() {
+    private Label updateScore() {
         strB.setLength(0);
         strB.append("High Score: ").append(hs);
         strB.append("  |  Current: ").append((snake.tail.size() / 2) - 1);
@@ -243,10 +243,10 @@ public class SnakeGame extends ApplicationAdapter {
     public void resize(int x, int y) {
 
     }
-	
-	@Override
-	public void dispose () {
+
+    @Override
+    public void dispose () {
         shapeRenderer.dispose();
         stage.dispose();
-	}
+    }
 }
