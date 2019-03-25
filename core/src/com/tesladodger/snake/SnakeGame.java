@@ -1,15 +1,23 @@
 package com.tesladodger.snake;
 
-import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.ApplicationAdapter;
 
-import java.util.ArrayList;
+import java.io.File;
+import java.io.FileReader;
+import java.io.PrintWriter;
+import java.io.IOException;
+import java.io.BufferedReader;
 import java.util.List;
 import java.util.Random;
+import java.util.ArrayList;
 
 
 public class SnakeGame extends ApplicationAdapter {
@@ -36,10 +44,10 @@ public class SnakeGame extends ApplicationAdapter {
             }
             else {
                 for (int i = 0; i < tail.size() - 2; i++) {
-                    tail.set(i, tail.get(i + 2));
+                    tail.set(i, tail.get(i + 2)); // Move every coordinate two places to the front,
                 }
-                tail.set(tail.size() - 2, x);   // Move every coordinate two places (one snake bit)
-                tail.set(tail.size() - 1, y);   // to the front, and add the new head to the end.
+                tail.set(tail.size() - 2, x);     // and overwrite the new head to the end.
+                tail.set(tail.size() - 1, y);
             }
         }
     }
@@ -58,35 +66,77 @@ public class SnakeGame extends ApplicationAdapter {
     private Snake snake;
     private Food food;
 
-    private boolean buttonPressed;
-
     private ShapeRenderer shapeRenderer;
 
-    private long startTime = System.currentTimeMillis();
+    private boolean buttonPressed;
+
+    private int hs;
+    private Stage stage;
+    private Label scoreLabel;
+    private StringBuilder strB;
+
+    private long startTime;
 	
 	@Override
 	public void create() {
 
         shapeRenderer = new ShapeRenderer();
 
-        snake = new Snake();
+        snake      = new Snake();
         snake.tail = new ArrayList<Integer>();
         snake.tail.add(snake.x);
         snake.tail.add(snake.y);
         snake.justAte = false;
 
-        food = new Food();
+        food   = new Food();
         food.x = food.getLocation();
         food.y = food.getLocation();
 
         buttonPressed = false;
 
+        boolean fileExists = new File("hs.txt").isFile();
+        if (!fileExists) {
+            try {
+                PrintWriter pr = new PrintWriter("hs.txt", "UTF-8");
+                pr.print("");
+                pr.close();
+            }
+            catch (IOException e) {
+                System.err.println("Caught IOException: " + e.getMessage());
+            }
+        }
+        else {
+            BufferedReader reader;
+            try {
+                reader = new BufferedReader(new FileReader("hs.txt"));
+                String hsString = reader.readLine();
+                reader.close();
+                hs = Integer.parseInt(hsString);
+            }
+            catch (IOException e) {
+                System.err.println("Caught IOException: " + e.getMessage());
+            }
+            catch (NumberFormatException e) {
+                System.err.println("Caught NumberFormatException: " + e.getMessage());
+            }
+        }
+
+        BitmapFont font = new BitmapFont();
+        scoreLabel = new Label("Send Nudes", new Label.LabelStyle(font, Color.GRAY));
+        strB       = new StringBuilder();
+        stage      = new Stage();
+        scoreLabel = updateScore();
+        stage.addActor(scoreLabel);
+
+        startTime = System.currentTimeMillis();
 	}
 
 	@Override
 	public void render() {
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+
+        stage.draw();
 
         // Create the snake
         for (int i = 0; i <= snake.tail.size() -1; i = i + 2) {
@@ -105,15 +155,25 @@ public class SnakeGame extends ApplicationAdapter {
         // Eating the food
         if (snake.x == food.x && snake.y == food.y) {
             snake.justAte = true;
-
             food.x = food.getLocation();
             food.y = food.getLocation();
         }
 
-        // Eating the snake
+        // Eating the tail
         for (int i = 0; i < snake.tail.size() - 2; i = i + 2) {
-            if (snake.tail.get(i).equals(snake.tail.get(snake.tail.size() - 2)) && snake.tail.get(i + 1).equals(snake.tail.get(snake.tail.size() - 1)) ) {
-                System.out.println("Noob... ");
+            if (snake.tail.get(i).equals(snake.tail.get(snake.tail.size() - 2))
+                    && snake.tail.get(i + 1).equals(snake.tail.get(snake.tail.size() - 1)) ) {
+                if ((snake.tail.size() / 2) - 1 > hs) {
+                    hs = (snake.tail.size() / 2) - 1;
+                    try {
+                        PrintWriter pr = new PrintWriter("hs.txt", "UTF-8");
+                        pr.print(hs);
+                        pr.close();
+                    }
+                    catch (IOException e) {
+                        System.err.println("Caught IOException: " + e.getMessage());
+                    }
+                }
                 snake.tail.clear();
                 snake.tail.add(snake.x);
                 snake.tail.add(snake.y);
@@ -166,16 +226,27 @@ public class SnakeGame extends ApplicationAdapter {
         if (System.currentTimeMillis() -  startTime >= 100) {
             snake.move();
             startTime = System.currentTimeMillis();
+            scoreLabel = updateScore();
         }
 
 	}
 
+	private Label updateScore() {
+        strB.setLength(0);
+        strB.append("High Score: ").append(hs);
+        strB.append("  |  Current: ").append((snake.tail.size() / 2) - 1);
+        scoreLabel.setText(strB);
+        return scoreLabel;
+    }
+
     @Override
     public void resize(int x, int y) {
+
     }
 	
 	@Override
 	public void dispose () {
         shapeRenderer.dispose();
+        stage.dispose();
 	}
 }
