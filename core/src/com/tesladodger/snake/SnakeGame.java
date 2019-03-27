@@ -22,12 +22,21 @@ import java.util.ArrayList;
 
 public class SnakeGame extends ApplicationAdapter {
 
+    private Random ran = new Random();
+
     private class Snake {
         private int side = Gdx.graphics.getHeight() / 30;
-        private int x = 0;
-        private int y = 0;
-        private int moveX = side;
-        private int moveY = 0;
+        private int x = (ran.nextInt(11) + 10) * this.side;  // Start with random position in the middle,
+        private int y = (ran.nextInt(11) + 10) * this.side;  // from 10 to 20 on the grid.
+        private int moveX;
+        private int moveY;
+        Snake(int direction, int magnitude) {                       // Start with a random direction
+            if (direction == 0) {
+                this.moveX = magnitude * this.side;
+            } else {
+                this.moveY = magnitude * this.side;
+            }
+        }
 
         private boolean justAte;
         private List<Integer> tail;
@@ -37,14 +46,14 @@ public class SnakeGame extends ApplicationAdapter {
             y = y + moveY;
             buttonPressed = false;
 
-            if (justAte){
+            if (justAte){        // If it just ate,
                 tail.add(x);     // Just add the new head to the end of the list
-                tail.add(y);     // if it just ate.
+                tail.add(y);
                 justAte = false;
             }
             else {
                 for (int i = 0; i < tail.size() - 2; i++) {
-                    tail.set(i, tail.get(i + 2)); // Move every coordinate two places to the front,
+                    tail.set(i, tail.get(i + 2)); // otherwise move every coordinate two places to the front,
                 }
                 tail.set(tail.size() - 2, x);     // and overwrite the new head to the end.
                 tail.set(tail.size() - 1, y);
@@ -56,7 +65,6 @@ public class SnakeGame extends ApplicationAdapter {
         private int side = snake.side;
         private int x;
         private int y;
-        private Random ran = new Random();
 
         private int getLocation() {
             return ran.nextInt(29) * food.side;
@@ -82,7 +90,9 @@ public class SnakeGame extends ApplicationAdapter {
 
         shapeRenderer = new ShapeRenderer();
 
-        snake      = new Snake();
+        int dir = ran.nextInt(2);         //  0 or 1
+        int mag = ran.nextInt(2) * 2 - 1; // -1 or 1
+        snake      = new Snake(dir, mag);
         snake.tail = new ArrayList<Integer>();
         snake.tail.add(snake.x);
         snake.tail.add(snake.y);
