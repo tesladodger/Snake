@@ -1,23 +1,25 @@
 package com.tesladodger.snake;
 
+import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.ApplicationAdapter;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.PrintWriter;
 import java.io.IOException;
-import java.io.BufferedReader;
+import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.ArrayList;
+import java.util.Scanner;
+
 
 
 public class SnakeGame extends ApplicationAdapter {
@@ -26,11 +28,11 @@ public class SnakeGame extends ApplicationAdapter {
 
     private class Snake {
         private int side = Gdx.graphics.getHeight() / 30;
-        private int x = (ran.nextInt(11) + 10) * this.side;  // Start with random position in the middle,
+        private int x = (ran.nextInt(11) + 15) * this.side;  // Start with random position in the middle,
         private int y = (ran.nextInt(11) + 10) * this.side;  // from 10 to 20 on the grid.
         private int moveX;
         private int moveY;
-        Snake(int direction, int magnitude) {                       // Start with a random direction
+        Snake(int direction, int magnitude) {  // Start with a random direction
             if (direction == 0) {
                 this.moveX = magnitude * this.side;
             } else {
@@ -47,7 +49,7 @@ public class SnakeGame extends ApplicationAdapter {
             buttonPressed = false;
 
             if (justAte){        // If it just ate,
-                tail.add(x);     // Just add the new head to the end of the list
+                tail.add(x);     // Just add the new head to the end of the list,
                 tail.add(y);
                 justAte = false;
             }
@@ -66,8 +68,8 @@ public class SnakeGame extends ApplicationAdapter {
         private int x;
         private int y;
 
-        private int getLocation() {
-            return ran.nextInt(29) * food.side;
+        private int getLocation(int bound) {
+            return ran.nextInt(bound) * food.side;
         }
     }
 
@@ -78,8 +80,14 @@ public class SnakeGame extends ApplicationAdapter {
 
     private boolean buttonPressed;
 
+    // From the config file
     private int hs;
+    private int delay;
+    private int fontSize;
+    private boolean showFPS;
+
     private Stage stage;
+    private FreeTypeFontGenerator ftfg;
     private Label scoreLabel;
     private StringBuilder strB;
 
@@ -99,29 +107,37 @@ public class SnakeGame extends ApplicationAdapter {
         snake.justAte = false;
 
         food   = new Food();
-        food.x = food.getLocation();
-        food.y = food.getLocation();
+        food.x = food.getLocation(40);
+        food.y = food.getLocation(30);
 
-        buttonPressed = false;
+        buttonPressed = false;  // This is to avoid clicking twice before the counter to move is up,
+        // making it impossible to turn the snake back on itself.
 
-        boolean fileExists = new File("hs.txt").isFile();
+        boolean fileExists = new File("snake.conf").isFile();
         if (!fileExists) {
             try {
-                PrintWriter pr = new PrintWriter("hs.txt", "UTF-8");
-                pr.print("");
+                PrintWriter pr = new PrintWriter("snake.conf", "UTF-8");
+                pr.print("0 ");
+                pr.print("100 ");
+                pr.print("12 ");
+                pr.print("false");
                 pr.close();
             }
             catch (IOException e) {
                 System.err.println("Caught IOException: " + e.getMessage());
             }
+            hs = 0; delay = 100; fontSize = 12; showFPS = false;  // The file can't be read if it doesn't exist...
         }
         else {
-            BufferedReader reader;
             try {
-                reader = new BufferedReader(new FileReader("hs.txt"));
-                String hsString = reader.readLine();
-                reader.close();
-                hs = Integer.parseInt(hsString);
+                Scanner fs = new Scanner(new File("snake.conf"));
+                String[] line = fs.nextLine().split(" ");
+                hs = Integer.parseInt(line[0]);
+                delay = Integer.parseInt(line[1]);
+                fontSize = Integer.parseInt(line[2]);
+                showFPS = Boolean.parseBoolean(line[3]);
+
+                fs.close();
             }
             catch (IOException e) {
                 System.err.println("Caught IOException: " + e.getMessage());
@@ -131,7 +147,10 @@ public class SnakeGame extends ApplicationAdapter {
             }
         }
 
-        BitmapFont font = new BitmapFont();
+        ftfg = new FreeTypeFontGenerator(Gdx.files.internal("Hack-Bold.ttf"));
+        FreeTypeFontParameter ftfp = new FreeTypeFontParameter();
+        ftfp.size = fontSize;
+        BitmapFont font = ftfg.generateFont(ftfp);
         scoreLabel = new Label("Send Nudes", new Label.LabelStyle(font, Color.GRAY));
         strB       = new StringBuilder();
         stage      = new Stage();
@@ -143,12 +162,13 @@ public class SnakeGame extends ApplicationAdapter {
 
     @Override
     public void render() {
+        Gdx.graphics.setWindowedMode(640, 480);
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         stage.draw();
 
-        // Create the snake
+        // Render the snake
         for (int i = 0; i <= snake.tail.size() -1; i = i + 2) {
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
             shapeRenderer.setColor(Color.WHITE);
@@ -156,61 +176,13 @@ public class SnakeGame extends ApplicationAdapter {
             shapeRenderer.end();
         }
 
-        // Create the food
+        // Render the food
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(Color.RED);
         shapeRenderer.rect(food.x, food.y, food.side, food.side);
         shapeRenderer.end();
 
-        // Eating the food
-        if (snake.x == food.x && snake.y == food.y) {
-            snake.justAte = true;
-            food.x = food.getLocation();
-            food.y = food.getLocation();
-        }
-
-        // Eating the tail
-        for (int i = 0; i < snake.tail.size() - 2; i = i + 2) {
-            if (snake.tail.get(i).equals(snake.tail.get(snake.tail.size() - 2))
-                    && snake.tail.get(i + 1).equals(snake.tail.get(snake.tail.size() - 1)) ) {
-                if ((snake.tail.size() / 2) - 1 > hs) {
-                    hs = (snake.tail.size() / 2) - 1;
-                    try {
-                        PrintWriter pr = new PrintWriter("hs.txt", "UTF-8");
-                        pr.print(hs);
-                        pr.close();
-                    }
-                    catch (IOException e) {
-                        System.err.println("Caught IOException: " + e.getMessage());
-                    }
-                }
-                snake.tail.clear();
-                snake.tail.add(snake.x);
-                snake.tail.add(snake.y);
-            }
-        }
-
-        // World bounds
-        int wH = Gdx.graphics.getHeight();
-        int wW = Gdx.graphics.getWidth();
-        if (snake.x >= wW) {
-            snake.x = -16;
-            snake.move();
-        }
-        else if (snake.x < -1) {
-            snake.x = wW;
-            snake.move();
-        }
-        else if (snake.y >= wH) {
-            snake.y = -16;
-            snake.move();
-        }
-        else if (snake.y < 0) {
-            snake.y = wH;
-            snake.move();
-        }
-
-        // User input
+        // Check user input
         if (Gdx.input.isKeyPressed(Keys.DPAD_LEFT) && snake.moveX == 0 && !buttonPressed) {
             snake.moveX = - snake.side;
             snake.moveY = 0;
@@ -233,11 +205,62 @@ public class SnakeGame extends ApplicationAdapter {
         }
 
         // Move at 10 fps for the ultimate gaming experience
-        if (System.currentTimeMillis() -  startTime >= 100) {
+        if (System.currentTimeMillis() -  startTime >= delay) {
+
             snake.move();
+
+            // Check out of bounds and move accordingly
+            int wH = Gdx.graphics.getHeight();
+            int wW = Gdx.graphics.getWidth();
+            if (snake.x >= wW) {
+                snake.x = -16;
+                snake.move();
+            }
+            else if (snake.x < -1) {
+                snake.x = wW;
+                snake.move();
+            }
+            else if (snake.y >= wH) {
+                snake.y = -16;
+                snake.move();
+            }
+            else if (snake.y < 0) {
+                snake.y = wH;
+                snake.move();
+            }
+
             startTime = System.currentTimeMillis();
+
+            // Eating the food
+            if (snake.x == food.x && snake.y == food.y) {
+                snake.justAte = true;
+                food.x = food.getLocation(40);
+                food.y = food.getLocation(30);
+            }
             scoreLabel = updateScore();
-        }
+
+            // Eating the tail
+            for (int i = 0; i < snake.tail.size() - 2; i = i + 2) {
+                if (snake.tail.get(i).equals(snake.tail.get(snake.tail.size() - 2))
+                        && snake.tail.get(i + 1).equals(snake.tail.get(snake.tail.size() - 1)) ) {
+                    if ((snake.tail.size() / 2) - 1 > hs) {
+                        hs = (snake.tail.size() / 2) - 1;
+                        try {
+                            PrintWriter pr = new PrintWriter("snake.conf", "UTF-8");
+                            pr.print(hs + " " + delay + " " + fontSize + " " + showFPS);
+                            pr.close();
+                        }
+                        catch (IOException e) {
+                            System.err.println("Caught IOException: " + e.getMessage());
+                        }
+                    }
+                    snake.tail.clear();
+                    snake.tail.add(snake.x);
+                    snake.tail.add(snake.y);
+                }
+            }
+
+        } // End of the delay
 
     }
 
@@ -245,6 +268,9 @@ public class SnakeGame extends ApplicationAdapter {
         strB.setLength(0);
         strB.append("High Score: ").append(hs);
         strB.append("  |  Current: ").append((snake.tail.size() / 2) - 1);
+        if (showFPS) {
+            strB.append("  FPS: ").append(Gdx.graphics.getFramesPerSecond());
+        }
         scoreLabel.setText(strB);
         return scoreLabel;
     }
@@ -258,5 +284,6 @@ public class SnakeGame extends ApplicationAdapter {
     public void dispose () {
         shapeRenderer.dispose();
         stage.dispose();
+        ftfg.dispose();
     }
 }
