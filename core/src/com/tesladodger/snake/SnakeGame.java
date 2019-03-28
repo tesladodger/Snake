@@ -32,6 +32,8 @@ public class SnakeGame extends ApplicationAdapter {
         private int y = (ran.nextInt(11) + 10) * this.side;  // from 10 to 20 on the grid.
         private int moveX;
         private int moveY;
+        private int prevLastTipX;
+        private int prevLastTipY;
         Snake(int direction, int magnitude) {  // Start with a random direction
             if (direction == 0) {
                 this.moveX = magnitude * this.side;
@@ -54,12 +56,22 @@ public class SnakeGame extends ApplicationAdapter {
                 justAte = false;
             }
             else {
+                prevLastTipX = tail.get(0);
+                prevLastTipY = tail.get(1);
                 for (int i = 0; i < tail.size() - 2; i++) {
                     tail.set(i, tail.get(i + 2)); // otherwise move every coordinate two places to the front,
                 }
                 tail.set(tail.size() - 2, x);     // and overwrite the new head to the end.
                 tail.set(tail.size() - 1, y);
             }
+        }
+
+        private void goBack() {
+            for (int i = tail.size() - 1; i >= 2; i--) {
+                tail.set(i, tail.get(i - 2));
+            }
+            tail.set(0, prevLastTipX);
+            tail.set(1, prevLastTipY);
         }
     }
 
@@ -107,11 +119,12 @@ public class SnakeGame extends ApplicationAdapter {
         snake.justAte = false;
 
         food   = new Food();
-        food.x = food.getLocation(40);
-        food.y = food.getLocation(30);
+        food.x = food.getLocation(40);  // The screen has 40 cols
+        food.y = food.getLocation(30);  // and 30 rows.
 
         buttonPressed = false;  // This is to avoid clicking twice before the counter to move is up,
-        // making it impossible to turn the snake back on itself.
+        // making it impossible to turn the snake back on itself. It is set true upon click and reset
+        // in the snake's move function.
 
         boolean fileExists = new File("snake.conf").isFile();
         if (!fileExists) {
@@ -124,7 +137,7 @@ public class SnakeGame extends ApplicationAdapter {
                 pr.close();
             }
             catch (IOException e) {
-                System.err.println("Caught IOException: " + e.getMessage());
+                System.err.println("IOException: " + e.getMessage());
             }
             hs = 0; delay = 100; fontSize = 12; showFPS = false;  // The file can't be read if it doesn't exist...
         }
@@ -140,10 +153,10 @@ public class SnakeGame extends ApplicationAdapter {
                 fs.close();
             }
             catch (IOException e) {
-                System.err.println("Caught IOException: " + e.getMessage());
+                System.err.println("IOException: " + e.getMessage());
             }
             catch (NumberFormatException e) {
-                System.err.println("Caught NumberFormatException: " + e.getMessage());
+                System.err.println("NumberFormatException: " + e.getMessage());
             }
         }
 
@@ -154,7 +167,7 @@ public class SnakeGame extends ApplicationAdapter {
         scoreLabel = new Label("Send Nudes", new Label.LabelStyle(font, Color.GRAY));
         strB       = new StringBuilder();
         stage      = new Stage();
-        scoreLabel = updateScore();
+        updateScore();
         stage.addActor(scoreLabel);
 
         startTime = System.currentTimeMillis();
@@ -213,18 +226,22 @@ public class SnakeGame extends ApplicationAdapter {
             int wH = Gdx.graphics.getHeight();
             int wW = Gdx.graphics.getWidth();
             if (snake.x >= wW) {
-                snake.x = -16;
-                snake.move();
+                snake.goBack(); // Back to previous position,
+                snake.x = -16;  // then set it in the right place,
+                snake.move();   // then move.
             }
             else if (snake.x < -1) {
+                snake.goBack();
                 snake.x = wW;
                 snake.move();
             }
             else if (snake.y >= wH) {
+                snake.goBack();
                 snake.y = -16;
                 snake.move();
             }
             else if (snake.y < 0) {
+                snake.goBack();
                 snake.y = wH;
                 snake.move();
             }
@@ -237,7 +254,7 @@ public class SnakeGame extends ApplicationAdapter {
                 food.x = food.getLocation(40);
                 food.y = food.getLocation(30);
             }
-            scoreLabel = updateScore();
+            updateScore();
 
             // Eating the tail
             for (int i = 0; i < snake.tail.size() - 2; i = i + 2) {
@@ -251,7 +268,7 @@ public class SnakeGame extends ApplicationAdapter {
                             pr.close();
                         }
                         catch (IOException e) {
-                            System.err.println("Caught IOException: " + e.getMessage());
+                            System.err.println("IOException: " + e.getMessage());
                         }
                     }
                     snake.tail.clear();
@@ -264,7 +281,7 @@ public class SnakeGame extends ApplicationAdapter {
 
     }
 
-    private Label updateScore() {
+    private void updateScore() {
         strB.setLength(0);
         strB.append("High Score: ").append(hs);
         strB.append("  |  Current: ").append((snake.tail.size() / 2) - 1);
@@ -272,7 +289,6 @@ public class SnakeGame extends ApplicationAdapter {
             strB.append("  FPS: ").append(Gdx.graphics.getFramesPerSecond());
         }
         scoreLabel.setText(strB);
-        return scoreLabel;
     }
 
     @Override
