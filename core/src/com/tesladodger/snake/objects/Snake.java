@@ -60,7 +60,7 @@ public final class Snake {
     }
 
     public final boolean checkAteTail() {
-        for (int i = 0; i < tail.size() - 2; i = i + 2) {
+        for (int i = 0; i < tail.size() - 2; i += 2) {
             if (tail.get(i).equals(tail.get(tail.size() - 2)) && tail.get(i + 1).equals(tail.get(tail.size() - 1)) ) {
                 return true;
             }
