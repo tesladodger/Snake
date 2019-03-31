@@ -4,6 +4,7 @@ import com.badlogic.gdx.Gdx;
 
 import java.util.List;
 
+
 public final class Snake {
     public static final int side = Gdx.graphics.getHeight() / 30;
     public int x;
