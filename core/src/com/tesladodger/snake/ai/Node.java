@@ -13,6 +13,7 @@ final class Node {
 
     boolean isObstacle = false;
 
+    @SuppressWarnings("Convert2Diamond")
     List<Node> neighbors = new ArrayList<Node>();
     Node cameFrom;
 
@@ -23,7 +24,7 @@ final class Node {
         if (y > 0  ) neighbors.add(grid[x    ][y - 1]);
     }
 
-    // Node constructor
+    // Node constructor.
     Node(int i, int j) {
         x = i;
         y = j;

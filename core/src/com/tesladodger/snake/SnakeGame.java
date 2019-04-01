@@ -12,17 +12,14 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.Scanner;
 
-import com.tesladodger.snake.objects.Snake;
-import com.tesladodger.snake.objects.Food;
 import com.tesladodger.snake.ai.SnakeAI;
+import com.tesladodger.snake.managers.FileManager;
+import com.tesladodger.snake.objects.Food;
+import com.tesladodger.snake.objects.Snake;
 
 
 public class SnakeGame extends ApplicationAdapter {
@@ -44,10 +41,9 @@ public class SnakeGame extends ApplicationAdapter {
 
     private boolean aiMode;
 
-    // From the config file
+    private FileManager fileManager;
     private int hs;
     private int delay;
-    private int fontSize;
     private boolean showFPS;
 
     private Stage stage;
@@ -62,12 +58,13 @@ public class SnakeGame extends ApplicationAdapter {
 
         shapeRenderer = new ShapeRenderer();
 
-        // Initialize snake and food stuff
-        int dir = ran.nextInt(2);         //  0 or 1
-        int mag = ran.nextInt(2) * 2 - 1; // -1 or 1
-        int raX = ran.nextInt(11) + 15;   // 15 to 25
-        int raY = (ran.nextInt(11) + 10); // 10 to 20
+        // Initialize the snake and food objects.
+        int dir = ran.nextInt(2);          //  0 or 1
+        int mag = ran.nextInt(2) * 2 - 1;  // -1 or 1
+        int raX = ran.nextInt(11) + 15;    // 15 to 25
+        int raY = ran.nextInt(11) + 10;    // 10 to 20
         snake      = new Snake(dir, mag, raX, raY);
+        // noinspection Convert2Diamond
         snake.tail = new ArrayList<Integer>();
         snake.tail.add(snake.x);
         snake.tail.add(snake.y);
@@ -75,57 +72,31 @@ public class SnakeGame extends ApplicationAdapter {
         ateTail = false;
 
         food   = new Food();
-        food.x = food.getLocation(ran.nextInt(40));  // The screen has 40 cols
-        food.y = food.getLocation(ran.nextInt(30));  // and 30 rows.
+        food.x = food.getLocation(ran.nextInt(40));
+        food.y = food.getLocation(ran.nextInt(30));
 
-        buttonPressed = false;  // This is to avoid clicking twice before the counter to move is up,
-        // making it impossible to turn the snake back on itself. It is set true upon click and reset
-        // in the snake's move function.
+        //  Boolean to avoid clicking twice before the counter to move is up,
+        // preventing the player from turning the snake back on itself.
+        //  It is set true upon click and reset after the snake moves.
+        buttonPressed = false;
 
-        // Initialize AI stuff
+        // Initialize AI stuff.
         aiMode = false;
         snakeAI = new SnakeAI();
+        //noinspection Convert2Diamond
         moveArray = new ArrayList<Integer>();
         move = 0;
         aiMoves = 0;
 
-        // Read or create the config file
-        // todo move the file management to a separate class
-        boolean fileExists = new File("snake.conf").isFile();
-        if (!fileExists) {
-            try {
-                PrintWriter pr = new PrintWriter("snake.conf", "UTF-8");
-                pr.print("0 ");
-                pr.print("100 ");
-                pr.print("12 ");
-                pr.print("false");
-                pr.close();
-            }
-            catch (IOException e) {
-                System.err.println("IOException: " + e.getMessage());
-            }
-            hs = 0; delay = 100; fontSize = 12; showFPS = false;  // The file can't be read if it doesn't exist...
-        }
-        else {
-            try {
-                Scanner fs = new Scanner(new File("snake.conf"));
-                String[] line = fs.nextLine().split(" ");
-                hs = Integer.parseInt(line[0]);
-                delay = Integer.parseInt(line[1]);
-                fontSize = Integer.parseInt(line[2]);
-                showFPS = Boolean.parseBoolean(line[3]);
+        // Read or create the config file.
+        fileManager = new FileManager();
+        fileManager.setup();
+        hs = fileManager.getHs();
+        delay = fileManager.getUserDelay();
+        int fontSize = fileManager.getFontSize();
+        showFPS = fileManager.getShowFPS();
 
-                fs.close();
-            }
-            catch (IOException e) {
-                System.err.println("IOException: " + e.getMessage());
-            }
-            catch (NumberFormatException e) {
-                System.err.println("NumberFormatException: " + e.getMessage());
-            }
-        }
-
-        // Stage
+        // Set the stage.
         ftfg = new FreeTypeFontGenerator(Gdx.files.internal("Hack-Bold.ttf"));
         FreeTypeFontParameter ftfp = new FreeTypeFontParameter();
         ftfp.size = fontSize;
@@ -136,7 +107,7 @@ public class SnakeGame extends ApplicationAdapter {
         updateScore();
         stage.addActor(scoreLabel);
 
-        // Start the chronometer
+        // Start the chronometer.
         startTime = System.currentTimeMillis();
     }
 
@@ -148,7 +119,7 @@ public class SnakeGame extends ApplicationAdapter {
 
         stage.draw();
 
-        // Render the snake
+        // Render the snake.
         for (int i = 0; i < snake.tail.size(); i += 2) {
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
             shapeRenderer.setColor(Color.WHITE);
@@ -156,13 +127,13 @@ public class SnakeGame extends ApplicationAdapter {
             shapeRenderer.end();
         }
 
-        // Render the food
+        // Render the food.
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(Color.RED);
         shapeRenderer.rect(food.x, food.y, Food.side, Food.side);
         shapeRenderer.end();
 
-        // Check user input
+        // Check user input.
         if (Gdx.input.isKeyPressed(Keys.DPAD_LEFT) && snake.moveX == 0 && !buttonPressed && !aiMode) {
             snake.moveX = - Snake.side;
             snake.moveY = 0;
@@ -184,25 +155,26 @@ public class SnakeGame extends ApplicationAdapter {
             buttonPressed = true;
         }
         else if (Gdx.input.isKeyJustPressed(Keys.A)) {
-            aiMode = !aiMode;  // the A key toggles aiMode
+            aiMode = !aiMode;
+
+            if (aiMode) delay = fileManager.getAiDelay();
+            else        delay = fileManager.getUserDelay();
+
             moveArray.clear();
             aiMoves = 0;
         }
 
 
+        // Move at 10 fps for the ultimate gaming experience.
+        if (System.currentTimeMillis() - startTime >= delay) {
 
-        // Move at 10 fps for the ultimate gaming experience
-        if (System.currentTimeMillis() -  startTime >= delay) {
-
+            // Control AI movement.
             if (aiMode) {
                 if (moveArray.size() < 1 || aiMoves > 10) {
                     moveArray = snakeAI.getMoves(food.x, food.y, snake.tail);
                     aiMoves = 0;
                 }
                 if (moveArray.size() < 1) {
-                    // I'm not sure if it ever gets here.
-                    // I was getting weird errors before the A* actually
-                    // worked and now I'm afraid to remove this.
                     System.out.println("Shit");
                     move = - 1;
                 }
@@ -231,33 +203,15 @@ public class SnakeGame extends ApplicationAdapter {
 
             snake.move();
 
-            // Check out of bounds and move accordingly
-            // todo this should be moved to the Snake
-            if (snake.x >= 640) {
-                snake.goBack();  // Back to previous position,
-                snake.x = -16;   // then set it in the right place,
-                snake.move();    // then move.
-            }
-            else if (snake.x < -1) {
-                snake.goBack();
-                snake.x = 640;
-                snake.move();
-            }
-            else if (snake.y >= 480) {
-                snake.goBack();
-                snake.y = -16;
-                snake.move();
-            }
-            else if (snake.y < 0) {
-                snake.goBack();
-                snake.y = 480;
-                snake.move();
-            }
             buttonPressed = false;
 
+            // Check out of bounds and move accordingly.
+            snake.checkBounds();
+
+            // Reset the timer.
             startTime = System.currentTimeMillis();
 
-            // Eating the food
+            // Eating the food.
             if (snake.x == food.x && snake.y == food.y) {
                 snake.justAte = true;  // This only has effect in the next move.
 
@@ -274,41 +228,36 @@ public class SnakeGame extends ApplicationAdapter {
                     }
                     foodInSnake = false;
                 }
-
             }
 
             updateScore();
 
-            // Eating the tail
+            // Eating the tail.
             ateTail = snake.checkAteTail();
-            if (ateTail) {
+            if (ateTail ) {
                 if ((snake.tail.size() / 2) - 1 > hs) {
-                    hs = (snake.tail.size() / 2) - 1;
-                    try {
-                        PrintWriter pr = new PrintWriter("snake.conf", "UTF-8");
-                        pr.print(hs + " " + delay + " " + fontSize + " " + showFPS);
-                        pr.close();
-                    }
-                    catch (IOException e) {
-                        System.err.println("IOException: " + e.getMessage());
-                    }
+                    fileManager.update((snake.tail.size() / 2) - 1);
+                    hs = fileManager.getHs();
                 }
                 snake.restart();
             }
 
-        } // End of the delay
+        } // End of the delay.
 
-    }
+    } // End of the render loop.
 
     private void updateScore() {
         strB.setLength(0);
         strB.append("High Score: ").append(hs);
         strB.append("  |  Current: ").append((snake.tail.size() / 2) - 1);
         if (showFPS) {
-            strB.append("  FPS: ").append(Gdx.graphics.getFramesPerSecond());
+            strB.append("   FPS: ").append(Gdx.graphics.getFramesPerSecond());
         }
         if (aiMode) {
-            strB.append("  AI ON");
+            strB.append("   AI ON");
+        }
+        else {
+            strB.append("   Press A to toggle AI");
         }
         scoreLabel.setText(strB);
     }

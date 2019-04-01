@@ -1,7 +1,7 @@
 package com.tesladodger.snake.ai;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 
 /*  Thanks, wikipedia:
@@ -22,9 +22,11 @@ import java.util.ArrayList;
 
 
 final class AStar {
+    @SuppressWarnings("Convert2Diamond")
     private List<Integer> moveArray = new ArrayList<Integer>();
+    @SuppressWarnings("Convert2Diamond")
     private List<Node> path = new ArrayList<Node>();
-    private Node[][] grid = new Node[120][90];  // A 2D array of node objects
+    private Node[][] grid = new Node[120][90];  // A 2D array of node objects.
 
 
     private List<Node> reconstructPath(Node current) {
@@ -64,7 +66,7 @@ final class AStar {
     }
 
 
-    // Main algorithm function
+    // Main algorithm function.
     List<Integer> algorithm(int[] food, List<Integer> snake) {
 
 
@@ -79,43 +81,43 @@ final class AStar {
         // Set the obstacles.
         int tempHeadX = snake.get(snake.size()-2)/16;
         int tempHeadY = snake.get(snake.size()-1)/16;
-        for (int i = 0; i < snake.size() - 2; i += 2) {
+        for (int i = 2; i < snake.size() - 2; i += 2) {
             //  A part of the tail is only an obstacle if it can be reached.
-            // For example, if the last bit of the tail is more than one move
-            // away it's not actually an obstacle. This is really what makes
-            // this algorithm work and not get stuck when it doesn't have to.
+            // For example, if the second to last bit of the tail is more than
+            // one move away it's not actually an obstacle. This is really what
+            // makes this algorithm work and not get stuck when it doesn't have
+            // to. I start at 2 because the tip of the tail is never an
+            // obstacle.
             if (      Math.abs( tempHeadX - (snake.get( i )/16) )
                     + Math.abs( tempHeadY - (snake.get(i+1)/16) ) <= i / 2 + 1) {
-                grid[(snake.get(i) / 16) + 40][(snake.get(i + 1) / 16) + 30].isObstacle = true;    // 0
+                grid[(snake.get(i) / 16) + 40][(snake.get(i + 1) / 16) + 30].isObstacle = true;  // 0
             }
             if (      Math.abs( tempHeadX - (snake.get( i )/16 + 40) )
                     + Math.abs( tempHeadY - (snake.get(i+1)/16     ) ) <= i / 2 + 1) {
-                grid[(snake.get(i) / 16) + 80][(snake.get(i + 1) / 16) + 30].isObstacle = true;    // 1
+                grid[(snake.get(i) / 16) + 80][(snake.get(i + 1) / 16) + 30].isObstacle = true;  // 1
             }
             if (      Math.abs( tempHeadX - (snake.get( i )/16     ) )
                     + Math.abs( tempHeadY - (snake.get(i+1)/16 + 30) ) <= i / 2 + 1) {
-                grid[(snake.get(i) / 16) + 40][(snake.get(i + 1) / 16) + 60].isObstacle = true;    // 2
+                grid[(snake.get(i) / 16) + 40][(snake.get(i + 1) / 16) + 60].isObstacle = true;  // 2
             }
             if (      Math.abs( tempHeadX - (snake.get( i )/16 - 40) )
                     + Math.abs( tempHeadY - (snake.get(i+1)/16     ) ) <= i / 2 + 1) {
-                grid[(snake.get(i) / 16)     ][(snake.get(i + 1) / 16) + 30].isObstacle = true;    // 3
+                grid[(snake.get(i) / 16)     ][(snake.get(i + 1) / 16) + 30].isObstacle = true;  // 3
             }
             if (      Math.abs( tempHeadX - (snake.get(i  )/16     ) )
                     + Math.abs( tempHeadY - (snake.get(i+1)/16 - 30) ) <= i / 2 + 1) {
-                grid[(snake.get(i) / 16) + 40][(snake.get(i + 1) / 16)     ].isObstacle = true;    // 4
+                grid[(snake.get(i) / 16) + 40][(snake.get(i + 1) / 16)     ].isObstacle = true;  // 4
             }
-            grid[(snake.get(i) / 16)     ][(snake.get(i + 1) / 16)     ].isObstacle = true; // 5
-            grid[(snake.get(i) / 16) + 80][(snake.get(i + 1) / 16)     ].isObstacle = true; // 6
-            grid[(snake.get(i) / 16) + 80][(snake.get(i + 1) / 16) + 60].isObstacle = true; // 7
-            grid[(snake.get(i) / 16)     ][(snake.get(i + 1) / 16) + 60].isObstacle = true; // 8
+            grid[(snake.get(i) / 16)     ][(snake.get(i + 1) / 16)     ].isObstacle = true;  // 5
+            grid[(snake.get(i) / 16) + 80][(snake.get(i + 1) / 16)     ].isObstacle = true;  // 6
+            grid[(snake.get(i) / 16) + 80][(snake.get(i + 1) / 16) + 60].isObstacle = true;  // 7
+            grid[(snake.get(i) / 16)     ][(snake.get(i + 1) / 16) + 60].isObstacle = true;  // 8
         }
 
 
         // Start and end nodes (translated to the grid).
-        int startX = (snake.get(snake.size() - 2) / 16) + 40;  // Head needs to be on the grid
-        int startY = (snake.get(snake.size() - 1) / 16) + 30;  // and translated.
-        Node start = grid[startX][startY];                     // Food only needs to be
-        Node end = grid[food[0] + 40][food[1] + 30];           // translated.
+        Node start = grid[tempHeadX + 40][tempHeadY + 30];
+        Node end = grid[food[0] + 40][food[1] + 30];
 
 
         // Purely heuristic value for the first node.
@@ -124,12 +126,14 @@ final class AStar {
 
 
         // Open and closed sets.
+        @SuppressWarnings("Convert2Diamond")
         List<Node> openSet = new ArrayList<Node>();
+        @SuppressWarnings("Convert2Diamond")
         List<Node> closedSet = new ArrayList<Node>();
         openSet.add(start);
 
 
-        // Algorithm loop
+        // Algorithm loop.
         while (!openSet.isEmpty()) {
 
             // Find the node in the openSet with the lowest f, starting from
@@ -137,7 +141,7 @@ final class AStar {
             int indexLowestF = openSet.size() - 1;
             for (int i = openSet.size() - 1; i >= 0; i--) {
                 // Implement LIFO by starting at the end of the queue and only
-                // searching for a lower f. This is better, since all paths
+                // searching for a lower f. This is faster, since all paths
                 // without obstacles have the same cost in a square grid.
                 if (openSet.get(i).f < openSet.get(indexLowestF).f) {
                     indexLowestF = i;
@@ -149,13 +153,11 @@ final class AStar {
             if (current == end) {
                 // Done, let's recreate the path.
                 path = reconstructPath(current);
-                // Return that a solution was found.
-                //solutionFound = true;
                 // Get the moves and return them.
                 return moveArray = convertToMoves();
             }
 
-            // Add current to the closedSet, remove it from the opesSet:
+            // Add current to the closedSet, remove it from the openSet.
             closedSet.add(current);
             openSet.remove(indexLowestF);
 
@@ -165,7 +167,7 @@ final class AStar {
             for (int i = 0; i < current.neighbors.size(); i++) {
                 Node neighbor = current.neighbors.get(i);
 
-                // Ignore the neighbors in the closedSet and the obstacles:
+                // Ignore the neighbors in the closedSet and the obstacles.
                 if (closedSet.contains(neighbor) || neighbor.isObstacle) {
                     continue;
                 }
@@ -191,7 +193,7 @@ final class AStar {
                 neighbor.f = neighbor.g + neighbor.h;
 
             }
-        } // End of the A* loop
+        } // End of the A* loop.
 
 
         // If you get here, there's no solution...
