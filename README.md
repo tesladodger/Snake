@@ -15,3 +15,8 @@ The tail sections are the obstacles, but only if they can be reached (this is ex
 ## Configuration
 
 In the config file, settings like the delay between moves, as well as the high score, are stored.
+
+
+## But does it work?
+
+![](https://github.com/tesladodger/Snake/blob/master/screenshots/snakeai.gif)
