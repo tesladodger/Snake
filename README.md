@@ -1,6 +1,6 @@
 # Snake
 
-Snake game with AI option.
+Snake game with AI option. Play it normally, or press the 'A' key to let the AI take control.
 
 
 ## A* Pathfinding
