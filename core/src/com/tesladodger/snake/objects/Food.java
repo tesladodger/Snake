@@ -4,7 +4,7 @@ import com.badlogic.gdx.Gdx;
 
 
 public final class Food {
-    public static final int side = Gdx.graphics.getHeight() / 30;
+    public final int side = Gdx.graphics.getHeight() / 30;
     public int x;
     public int y;
 

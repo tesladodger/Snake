@@ -1,43 +1,40 @@
 package com.tesladodger.snake.ai;
 
-import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 
 
-/*
- *  Finds the closest food, which just means finding if crossing the edge is
- * faster. After that it calls the A* algorithm.
- *
- *  The end of the tail list (effectively the current snake head) is the start
- * and the food is the goal. The rest of the tail list are obstacles.
- *           ________2
- *          |********|             Finds the distance between the snake head
- *          |*****f**|            (represented by the s) and the places it can
- *          |********|            get the food from (f). The coordinates of the
- *   _______|********|_______     closest are passed to the A* algorithm.
- *  |************************|     Every quadrant has a number to distinguish
- *  |*****f*******f*******f**|    them better in the code. The center is 0.
- * 3|************************|1    The quadrants are 40*30.
- *  |*********s**************|
- *          |********|             This needs to be improved. The closest food
- *          |*****f**|            doesn't always mean the shortest path, and
- *          |********|            might not have a solution.
- *          |********|
- *              4
- *
- *  My naive goal was 150. It currently has a high score of 181. It has a lot
- * of improvements on top of the A* alg, mainly in the way obstacles are
- * defined (it still can get trapped, don't know how to fix that).
- *
- *  Need to add some king of zigzag, in case the food is trapped by the snake,
- * just to buy some time.
- */
+/*  Finds the closest food, which just means finding if crossing the edge is   *
+ * faster. After that it calls the A* algorithm.                               *
+ *                                                                             *
+ *  The end of the tail list (effectively the current snake head) is the start *
+ * and the food is the goal. The rest of the tail list are obstacles.          *
+ *               2                                                             *
+ *           ********              Finds the distance between the snake head   *
+ *           *****f**             (represented by the s) and the places it can *
+ *           ********             get the food from (f). The coordinates of the*
+ *           ********             closest are passed to the A* algorithm.      *
+ *   ************************      Every quadrant has a number to distinguish  *
+ *   *****f*******f*******f**     them better in the code. The center is 0.    *
+ * 3 ************************ 1    The quadrants are 40*30.                    *
+ *   *********s**************                                                  *
+ *           ********              This needs to be improved. The closest food *
+ *           *****f**             doesn't always mean the shortest path, and   *
+ *           ********             might not have a solution.                   *
+ *           ********                                                          *
+ *              4                                                              *
+ *                                                                             *
+ *  My naive goal was 150. It currently has a high score of 181. It has a lot  *
+ * of improvements on top of the A* alg, mainly in the way obstacles are       *
+ * defined (it still can get trapped, don't know how to fix that).             *
+ *                                                                             *
+ *  Need to add some kind of zigzag, in case the food is trapped by the snake, *
+ * just to buy some time.                                                      */
 
 
 public final class SnakeAI {
     private int[] foodLocation = new int[2];
-    @SuppressWarnings("Convert2Diamond")
-    private List<Integer> moveArray = new ArrayList<Integer>();
+
     private int headX;
     private int headY;
     private AStar aStar = new AStar();
@@ -89,7 +86,7 @@ public final class SnakeAI {
     }
 
 
-    public final List<Integer> getMoves(int foodX, int foodY, List<Integer> snake) {
+    public final Deque<Integer> getMoves(int foodX, int foodY, List<Integer> snake) {
         // Change the pixel positions to spots on the grid.
         foodX = foodX / 16;
         foodY = foodY / 16;
@@ -99,12 +96,9 @@ public final class SnakeAI {
         // Find where the closest food is.
         foodLocation = getClosestFood(foodX, foodY);
 
-        moveArray.clear();
+        Deque<Integer> moveQueue;
+        moveQueue = aStar.algorithm(foodLocation, snake);
 
-        moveArray = aStar.algorithm(foodLocation, snake);
-
-        // todo zigzag if the array is empty
-
-        return moveArray;
+        return moveQueue;
     }
 }

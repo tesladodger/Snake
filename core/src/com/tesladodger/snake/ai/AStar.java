@@ -1,73 +1,76 @@
 package com.tesladodger.snake.ai;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 
 
-/*  Thanks, wikipedia:
- * https://en.wikipedia.org/wiki/A*_search_algorithm
- *  Thanks, Coding Train:
- * https://youtu.be/aKYlikFAV4k
- *
- *  This isn't optimal in terms of speed. This uses objects and linked lists,
- * because that's what I know how to use. I've seen stuff on StackOverflow with
- * hash maps and references:
- * https://codereview.stackexchange.com/questions/38376/a-search-algorithm
- * This is a possible improvement to speed up the method.
- *
- *  I think I can use this algorithm, together with the Node object, in other
- * projects, with a bit of cleaning up. That's why the SnakeAI is a separate
- * class.
- */
+/*  Thanks, wikipedia:                                                         *
+ * https://en.wikipedia.org/wiki/A*_search_algorithm                           *
+ *  Thanks, Coding Train:                                                      *
+ * https://youtu.be/aKYlikFAV4k                                                *
+ *                                                                             *
+ *  This isn't optimal in terms of speed. This uses objects and linked lists,  *
+ * because that's what I know how to use. I've seen stuff on StackOverflow with*
+ * hash maps and references:                                                   *
+ * https://codereview.stackexchange.com/questions/38376/a-search-algorithm     *
+ *  It's a possible improvement to speed up the method.                        *
+ *                                                                             *
+ *  I think I can use this algorithm, together with the Node object, in other  *
+ * projects, with a bit of cleaning up. That's why the SnakeAI is a separate   *
+ * class.                                                                      */
 
 
 final class AStar {
     @SuppressWarnings("Convert2Diamond")
-    private List<Integer> moveArray = new ArrayList<Integer>();
+    private Deque<Integer> moveQueue = new ArrayDeque<Integer>();
     @SuppressWarnings("Convert2Diamond")
-    private List<Node> path = new ArrayList<Node>();
-    private Node[][] grid = new Node[120][90];  // A 2D array of node objects.
+    private Deque<Node> path = new ArrayDeque<Node>();
+    // Initialize a 2D array of node objects.
+    private Node[][] grid = new Node[120][90];
 
 
-    private List<Node> reconstructPath(Node current) {
-        //  This goes trough the cameFrom nodes, adding them to the path list.
-        //  Remember that they are backwards, meaning they go from the food to
-        // the head.
+    private Deque<Node> reconstructPath(Node current) {
+        /*  Go trough the cameFrom nodes, adding them to the path list. Adding *
+         * them to the beginning of the queue corrects the order (i.e. from the*
+         * head to the food).                                                  */
         path.clear();
+
         Node temp = current;
         path.add(temp);
         while (temp.cameFrom != null) {
-            path.add(temp.cameFrom);
+            path.addFirst(temp.cameFrom);
             temp = temp.cameFrom;
         }
+
         return path;
     }
 
 
-    private List<Integer> convertToMoves() {
-        //  Turn the path of nodes into actual moves.
-        //  Remember, index i is where you're at and index (i - 1) is where you
-        // want to go, because of the way the path is reconstructed.
-        for (int i = path.size() - 1; i > 0; i--) {
-            if (path.get(i - 1).x > path.get(i).x) {
-                moveArray.add(0);
+    private Deque<Integer> convertToMoves() {
+        // Turn the path of nodes into actual moves.
+        for (int i = 0; i < path.size() - 1; i++) {
+            Node temp = path.removeFirst();
+            if (path.getFirst().x > temp.x) {
+                moveQueue.addLast(0);
             }
-            else if (path.get(i - 1).x < path.get(i).x) {
-                moveArray.add(2);
+            else if (path.getFirst().x < temp.x) {
+                moveQueue.addLast(2);
             }
-            else if (path.get(i - 1).y > path.get(i).y){
-                moveArray.add(1);
+            else if (path.getFirst().y > temp.y) {
+                moveQueue.addLast(1);
             }
-            else if (path.get(i - 1).y < path.get(i).y) {
-                moveArray.add(3);
+            else if (path.getFirst().y < temp.y) {
+                moveQueue.addLast(3);
             }
         }
-        return moveArray;
+        return moveQueue;
     }
 
 
     // Main algorithm function.
-    List<Integer> algorithm(int[] food, List<Integer> snake) {
+    Deque<Integer> algorithm(int[] food, List<Integer> snake) {
 
 
         // Populate the grid with nodes.
@@ -82,12 +85,12 @@ final class AStar {
         int tempHeadX = snake.get(snake.size()-2)/16;
         int tempHeadY = snake.get(snake.size()-1)/16;
         for (int i = 2; i < snake.size() - 2; i += 2) {
-            //  A part of the tail is only an obstacle if it can be reached.
-            // For example, if the second to last bit of the tail is more than
-            // one move away it's not actually an obstacle. This is really what
-            // makes this algorithm work and not get stuck when it doesn't have
-            // to. I start at 2 because the tip of the tail is never an
-            // obstacle.
+            /*  A part of the tail is only an obstacle if it can be reached.   *
+            *  For example, if the second to last bit of the tail is more than *
+            *  one move away it's not actually an obstacle.                    *
+            *   This really makes this algorithm work and not get stuck when   *
+            * it doesn't have to.                                              *
+            *   I start at 2 because the tip of the tail is never an obstacle. */
             if (      Math.abs( tempHeadX - (snake.get( i )/16) )
                     + Math.abs( tempHeadY - (snake.get(i+1)/16) ) <= i / 2 + 1) {
                 grid[(snake.get(i) / 16) + 40][(snake.get(i + 1) / 16) + 30].isObstacle = true;  // 0
@@ -136,13 +139,13 @@ final class AStar {
         // Algorithm loop.
         while (!openSet.isEmpty()) {
 
-            // Find the node in the openSet with the lowest f, starting from
-            // index 0.
+            /* Find the node in the openSet with the lowest f, starting from   *
+             * index 0.                                                        */
             int indexLowestF = openSet.size() - 1;
             for (int i = openSet.size() - 1; i >= 0; i--) {
-                // Implement LIFO by starting at the end of the queue and only
-                // searching for a lower f. This is faster, since all paths
-                // without obstacles have the same cost in a square grid.
+                /* Implement LIFO by starting at the end of the list and only  *
+                 * searching for a lower f. This is faster, since all paths    *
+                 * without obstacles have the same cost in a square grid.      */
                 if (openSet.get(i).f < openSet.get(indexLowestF).f) {
                     indexLowestF = i;
                 }
@@ -154,7 +157,7 @@ final class AStar {
                 // Done, let's recreate the path.
                 path = reconstructPath(current);
                 // Get the moves and return them.
-                return moveArray = convertToMoves();
+                return moveQueue = convertToMoves();
             }
 
             // Add current to the closedSet, remove it from the openSet.
@@ -180,8 +183,7 @@ final class AStar {
                     openSet.add(neighbor);
                 }
                 else if (tentativeGScore >= neighbor.g) {
-                    // If the node is in the open set but this path is worse,
-                    // ignore it.
+                    // If this path is worse, ignore it.
                     continue;
                 }
 
@@ -197,7 +199,7 @@ final class AStar {
 
 
         // If you get here, there's no solution...
-        return moveArray;
+        return moveQueue;
     }
 
 }

@@ -12,8 +12,9 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Deque;
 import java.util.Random;
 
 import com.tesladodger.snake.ai.SnakeAI;
@@ -30,9 +31,9 @@ public class SnakeGame extends ApplicationAdapter {
     private Food food;
 
     private SnakeAI snakeAI;
-    private List<Integer> moveArray;
+    private Deque<Integer> moveQueue;
     private int move;
-    private int aiMoves;
+    private int aiMovesCounter;
 
     private ShapeRenderer shapeRenderer;
 
@@ -75,18 +76,18 @@ public class SnakeGame extends ApplicationAdapter {
         food.x = food.getLocation(ran.nextInt(40));
         food.y = food.getLocation(ran.nextInt(30));
 
-        //  Boolean to avoid clicking twice before the counter to move is up,
-        // preventing the player from turning the snake back on itself.
-        //  It is set true upon click and reset after the snake moves.
+        /*  Boolean to avoid clicking twice before the counter to move is up,  *
+         * preventing the player from turning the snake back on itself.        *
+         *  It is set true upon click and reset after the snake moves.         */
         buttonPressed = false;
 
         // Initialize AI stuff.
         aiMode = false;
         snakeAI = new SnakeAI();
         //noinspection Convert2Diamond
-        moveArray = new ArrayList<Integer>();
+        moveQueue = new ArrayDeque<Integer>();  // FIFO Queue.
         move = 0;
-        aiMoves = 0;
+        aiMovesCounter = 0;
 
         // Read or create the config file.
         fileManager = new FileManager();
@@ -123,35 +124,35 @@ public class SnakeGame extends ApplicationAdapter {
         for (int i = 0; i < snake.tail.size(); i += 2) {
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
             shapeRenderer.setColor(Color.WHITE);
-            shapeRenderer.rect(snake.tail.get(i), snake.tail.get(i + 1), Snake.side, Snake.side);
+            shapeRenderer.rect(snake.tail.get(i), snake.tail.get(i + 1), snake.side, snake.side);
             shapeRenderer.end();
         }
 
         // Render the food.
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(Color.RED);
-        shapeRenderer.rect(food.x, food.y, Food.side, Food.side);
+        shapeRenderer.rect(food.x, food.y, food.side, food.side);
         shapeRenderer.end();
 
         // Check user input.
         if (Gdx.input.isKeyPressed(Keys.DPAD_LEFT) && snake.moveX == 0 && !buttonPressed && !aiMode) {
-            snake.moveX = - Snake.side;
+            snake.moveX = - snake.side;
             snake.moveY = 0;
             buttonPressed = true;
         }
         else if (Gdx.input.isKeyPressed(Keys.DPAD_RIGHT) && snake.moveX == 0 && !buttonPressed && !aiMode) {
-            snake.moveX = Snake.side;
+            snake.moveX = snake.side;
             snake.moveY = 0;
             buttonPressed = true;
         }
         else if (Gdx.input.isKeyPressed(Keys.DPAD_UP) && snake.moveY == 0 && !buttonPressed && !aiMode) {
             snake.moveX = 0;
-            snake.moveY = Snake.side;
+            snake.moveY = snake.side;
             buttonPressed = true;
         }
         else if (Gdx.input.isKeyPressed(Keys.DPAD_DOWN) && snake.moveY == 0 && !buttonPressed && !aiMode) {
             snake.moveX = 0;
-            snake.moveY = - Snake.side;
+            snake.moveY = - snake.side;
             buttonPressed = true;
         }
         else if (Gdx.input.isKeyJustPressed(Keys.A)) {
@@ -160,8 +161,8 @@ public class SnakeGame extends ApplicationAdapter {
             if (aiMode) delay = fileManager.getAiDelay();
             else        delay = fileManager.getUserDelay();
 
-            moveArray.clear();
-            aiMoves = 0;
+            moveQueue.clear();
+            aiMovesCounter = 0;
         }
 
 
@@ -170,35 +171,36 @@ public class SnakeGame extends ApplicationAdapter {
 
             // Control AI movement.
             if (aiMode) {
-                if (moveArray.size() < 1 || aiMoves > 10) {
-                    moveArray = snakeAI.getMoves(food.x, food.y, snake.tail);
-                    aiMoves = 0;
+                if (moveQueue.size() < 1 || aiMovesCounter > 30) {
+                    //long t = System.currentTimeMillis();
+                    moveQueue.clear();
+                    moveQueue = snakeAI.getMoves(food.x, food.y, snake.tail);
+                    //System.out.println("Calc time: " + (System.currentTimeMillis() - t));
+                    aiMovesCounter = 0;
                 }
-                if (moveArray.size() < 1) {
+                if (moveQueue.size() < 1) {
                     System.out.println("Shit");
-                    move = - 1;
                 }
                 else {
-                    move = moveArray.get(0);
-                    moveArray.remove(0);
+                    move = moveQueue.removeFirst();
                 }
                 if (move == 0 && snake.moveX == 0) {
-                    snake.moveX = Snake.side;
+                    snake.moveX = snake.side;
                     snake.moveY = 0;
                 }
                 else if (move == 1 && snake.moveY == 0) {
                     snake.moveX = 0;
-                    snake.moveY = Snake.side;
+                    snake.moveY = snake.side;
                 }
                 else if (move == 2 && snake.moveX == 0) {
-                    snake.moveX = - Snake.side;
+                    snake.moveX = - snake.side;
                     snake.moveY = 0;
                 }
                 else if (move == 3 && snake.moveY == 0) {
                     snake.moveX = 0;
-                    snake.moveY = - Snake.side;
+                    snake.moveY = - snake.side;
                 }
-                aiMoves += 1;
+                aiMovesCounter += 1;
             }
 
             snake.move();
@@ -223,7 +225,8 @@ public class SnakeGame extends ApplicationAdapter {
                     food.y = food.getLocation(ran.nextInt(30));
                     for (int i = 0; i < snake.tail.size() - 1; i += 2) {
                         if (snake.tail.get(i) == food.x && snake.tail.get(i + 1) == food.y) {
-                            continue outerLoop;  // This sends it to the beginning of the while.
+                            // Go to the beginning of the while.
+                            continue outerLoop;
                         }
                     }
                     foodInSnake = false;
@@ -245,6 +248,7 @@ public class SnakeGame extends ApplicationAdapter {
         } // End of the delay.
 
     } // End of the render loop.
+
 
     private void updateScore() {
         strB.setLength(0);

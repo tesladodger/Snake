@@ -6,7 +6,7 @@ import java.util.List;
 
 
 public final class Snake {
-    public static final int side = Gdx.graphics.getHeight() / 30;
+    public final int side = Gdx.graphics.getHeight() / 30;
     public int x;
     public int y;
     public int moveX;
@@ -56,6 +56,17 @@ public final class Snake {
     }
 
 
+    /*  When it passes a wall it has to go back before being sent to the other *
+     * side, in order to not have two moves in one turn.                       */
+    private void goBack() {
+        for (int i = tail.size() - 1; i >= 2; i--) {
+            tail.set(i, tail.get(i - 2));
+        }
+        tail.set(0, prevLastTipX);
+        tail.set(1, prevLastTipY);
+    }
+
+
     public final void checkBounds() {
         if (x >= 640) {
             // Go to previous position.
@@ -79,17 +90,6 @@ public final class Snake {
             y = 480;
             move();
         }
-    }
-
-
-    //  When it passes a wall it has to go back before being sent to the other side
-    // in order to not have two moves in one turn.
-    private void goBack() {
-        for (int i = tail.size() - 1; i >= 2; i--) {
-            tail.set(i, tail.get(i - 2));
-        }
-        tail.set(0, prevLastTipX);
-        tail.set(1, prevLastTipY);
     }
 
 
