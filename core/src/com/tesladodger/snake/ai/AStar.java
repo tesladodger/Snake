@@ -102,15 +102,15 @@ public final class AStar {
         /*  This method returns the distance to the closest goal, for a given  *
          * node, i.e. the heuristic of that node.                              */
         int[] distances = new int[9];
-        distances[0] = manhattanDist(node.x, node.y,goalX+40,goalY+30);
-        distances[1] = manhattanDist(node.x, node.y,goalX+80,goalY+30);
-        distances[2] = manhattanDist(node.x, node.y,goalX+40,goalY+60);
-        distances[3] = manhattanDist(node.x, node.y,    goalX,   goalY+30);
-        distances[4] = manhattanDist(node.x, node.y,goalX+40,    goalY);
-        distances[5] = manhattanDist(node.x, node.y,    goalX,       goalY);
-        distances[6] = manhattanDist(node.x, node.y,goalX+80,    goalY);
-        distances[7] = manhattanDist(node.x, node.y,goalX+80,goalY+60);
-        distances[8] = manhattanDist(node.x, node.y,    goalX,   goalY+60);
+        distances[0] = manhattanDist(node.x, node.y, goalX+40, goalY+30);
+        distances[1] = manhattanDist(node.x, node.y, goalX+80, goalY+30);
+        distances[2] = manhattanDist(node.x, node.y, goalX+40, goalY+60);
+        distances[3] = manhattanDist(node.x, node.y, goalX,    goalY+30);
+        distances[4] = manhattanDist(node.x, node.y, goalX+40, goalY);
+        distances[5] = manhattanDist(node.x, node.y, goalX,    goalY);
+        distances[6] = manhattanDist(node.x, node.y, goalX+80, goalY);
+        distances[7] = manhattanDist(node.x, node.y, goalX+80, goalY+60);
+        distances[8] = manhattanDist(node.x, node.y, goalX,    goalY+60);
 
         int heuristic = distances[0];
         for (int i = 1; i < distances.length; i++) {
@@ -156,40 +156,34 @@ public final class AStar {
             *  For example, if the second to last bit of the tail is more than *
             * one move away it's not actually an obstacle.                     *
             *  This really makes this algorithm work and not get stuck when    *
-            * it doesn't have to.                                              *
+            * it doesn't have to (it's like predicting the future).            *
             *  I start at 2 because the tip of the tail is never an obstacle.  */
-            // todo send this to the manhattan alg (yes, I know)
-            if (      Math.abs( tempHeadX - (snake.get( i )/16) )
-                    + Math.abs( tempHeadY - (snake.get(i+1)/16) ) <= i / 2 + 1) {
-                grid[(snake.get(i) / 16) + 40][(snake.get(i + 1) / 16) + 30].isObstacle = true;  // 0
+            if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16   , snake.get(i+1)/16   ) <= i / 2 + 1) {
+                grid[(snake.get(i) / 16) + 40][(snake.get(i + 1) / 16) + 30].isObstacle = true;    // 0
             }
-            if (      Math.abs( tempHeadX - (snake.get( i )/16 + 40) )
-                    + Math.abs( tempHeadY - (snake.get(i+1)/16     ) ) <= i / 2 + 1) {
-                grid[(snake.get(i) / 16) + 80][(snake.get(i + 1) / 16) + 30].isObstacle = true;  // 1
+            if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16+40, snake.get(i+1)/16   ) <= i / 2 + 1) {
+                grid[(snake.get(i) / 16) + 80][(snake.get(i + 1) / 16) + 30].isObstacle = true;    // 1
             }
-            if (      Math.abs( tempHeadX - (snake.get( i )/16     ) )
-                    + Math.abs( tempHeadY - (snake.get(i+1)/16 + 30) ) <= i / 2 + 1) {
-                grid[(snake.get(i) / 16) + 40][(snake.get(i + 1) / 16) + 60].isObstacle = true;  // 2
+            if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16   , snake.get(i+1)/16+30) <= i / 2 + 1) {
+                grid[(snake.get(i) / 16) + 40][(snake.get(i + 1) / 16) + 60].isObstacle = true;    // 2
             }
-            if (      Math.abs( tempHeadX - (snake.get( i )/16 - 40) )
-                    + Math.abs( tempHeadY - (snake.get(i+1)/16     ) ) <= i / 2 + 1) {
-                grid[(snake.get(i) / 16)     ][(snake.get(i + 1) / 16) + 30].isObstacle = true;  // 3
+            if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16-40, snake.get(i+1)/16   ) <= i / 2 + 1) {
+                grid[(snake.get(i) / 16)     ][(snake.get(i + 1) / 16) + 30].isObstacle = true;    // 3
             }
-            if (      Math.abs( tempHeadX - (snake.get(i  )/16     ) )
-                    + Math.abs( tempHeadY - (snake.get(i+1)/16 - 30) ) <= i / 2 + 1) {
-                grid[(snake.get(i) / 16) + 40][(snake.get(i + 1) / 16)     ].isObstacle = true;  // 4
+            if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16   , snake.get(i+1)/16-30) <= i / 2 + 1) {
+                grid[(snake.get(i) / 16) + 40][(snake.get(i + 1) / 16)     ].isObstacle = true;    // 4
             }
-            if ( manhattanDist(tempHeadX, tempHeadY,snake.get(i)/16 - 40,snake.get(i+1)/16 - 30) <= i / 2 + 1) {
-                grid[(snake.get(i) / 16)][(snake.get(i + 1) / 16)].isObstacle = true;  // 5
+            if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16-40, snake.get(i+1)/16-30) <= i / 2 + 1) {
+                grid[(snake.get(i) / 16)     ][(snake.get(i + 1) / 16)     ].isObstacle = true;    // 5
             }
-            if ( manhattanDist(tempHeadX, tempHeadY,snake.get(i)/16 + 40,snake.get(i+1)/16 - 30) <= i / 2 + 1) {
-                grid[(snake.get(i) / 16) + 80][(snake.get(i + 1) / 16)].isObstacle = true;  // 6
+            if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16+40, snake.get(i+1)/16-30) <= i / 2 + 1) {
+                grid[(snake.get(i) / 16) + 80][(snake.get(i + 1) / 16)     ].isObstacle = true;    // 6
             }
-            if ( manhattanDist(tempHeadX, tempHeadY,snake.get(i)/16 + 40,snake.get(i+1)/16 + 30) <= i / 2 + 1) {
-                grid[(snake.get(i) / 16) + 80][(snake.get(i + 1) / 16) + 60].isObstacle = true;  // 7
+            if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16+40, snake.get(i+1)/16+30) <= i / 2 + 1) {
+                grid[(snake.get(i) / 16) + 80][(snake.get(i + 1) / 16) + 60].isObstacle = true;    // 7
             }
-            if ( manhattanDist(tempHeadX, tempHeadY,snake.get(i)/16 - 40,snake.get(i+1)/16 + 30) <= i / 2 + 1) {
-                grid[(snake.get(i) / 16)][(snake.get(i + 1) / 16) + 60].isObstacle = true;  // 8
+            if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16-40, snake.get(i+1)/16+30) <= i / 2 + 1) {
+                grid[(snake.get(i) / 16)     ][(snake.get(i + 1) / 16) + 60].isObstacle = true;    // 8
             }
         }
 

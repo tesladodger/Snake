@@ -85,7 +85,7 @@ public class SnakeGame extends ApplicationAdapter {
         aiMode = false;
         aStar = new AStar();
         //noinspection Convert2Diamond
-        moveQueue = new ArrayDeque<Integer>();  // FIFO Queue.
+        moveQueue = new ArrayDeque<Integer>();  // Used as FIFO.
         move = 0;
 
         // Read or create the config file.
@@ -212,7 +212,7 @@ public class SnakeGame extends ApplicationAdapter {
             if (snake.x == food.x && snake.y == food.y) {
                 snake.justAte = true;  // This only has effect in the next move.
 
-                // Don't allow the food to be where the snake is.
+                // Don't allow the next food to be where the snake is.
                 boolean foodInSnake = true;
                 outerLoop:
                 while (foodInSnake) {
@@ -232,6 +232,7 @@ public class SnakeGame extends ApplicationAdapter {
 
             // Eating the tail.
             ateTail = snake.checkAteTail();
+            // Update the high score.
             if (ateTail ) {
                 if ((snake.tail.size() / 2) - 1 > hs) {
                     fileManager.update((snake.tail.size() / 2) - 1);

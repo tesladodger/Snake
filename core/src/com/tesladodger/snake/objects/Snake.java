@@ -30,8 +30,8 @@ public final class Snake {
 
 
     public final void move() {
-        x = x + moveX;
-        y = y + moveY;
+        x += moveX;
+        y += moveY;
 
         if (justAte) {
             // If it ate, just add the new head to the list.
@@ -57,7 +57,8 @@ public final class Snake {
 
 
     /*  When it passes a wall it has to go back before being sent to the other *
-     * side, in order to not have two moves in one turn.                       */
+     * side, in order to not have two moves in one turn and not be out of      *
+     * bounds for the AI grid.                                                 */
     private void goBack() {
         for (int i = tail.size() - 1; i >= 2; i--) {
             tail.set(i, tail.get(i - 2));
