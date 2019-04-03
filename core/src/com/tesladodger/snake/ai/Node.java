@@ -12,6 +12,7 @@ final class Node {
     int h;
 
     boolean isObstacle = false;
+    boolean isGoal;
 
     @SuppressWarnings("Convert2Diamond")
     List<Node> neighbors = new ArrayList<Node>();

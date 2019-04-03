@@ -17,7 +17,7 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.Random;
 
-import com.tesladodger.snake.ai.SnakeAI;
+import com.tesladodger.snake.ai.AStar;
 import com.tesladodger.snake.managers.FileManager;
 import com.tesladodger.snake.objects.Food;
 import com.tesladodger.snake.objects.Snake;
@@ -30,10 +30,9 @@ public class SnakeGame extends ApplicationAdapter {
     private Snake snake;
     private Food food;
 
-    private SnakeAI snakeAI;
+    private AStar aStar;
     private Deque<Integer> moveQueue;
     private int move;
-    private int aiMovesCounter;
 
     private ShapeRenderer shapeRenderer;
 
@@ -53,6 +52,7 @@ public class SnakeGame extends ApplicationAdapter {
     private StringBuilder strB;
 
     private long startTime;
+
 
     @Override
     public void create() {
@@ -83,11 +83,10 @@ public class SnakeGame extends ApplicationAdapter {
 
         // Initialize AI stuff.
         aiMode = false;
-        snakeAI = new SnakeAI();
+        aStar = new AStar();
         //noinspection Convert2Diamond
         moveQueue = new ArrayDeque<Integer>();  // FIFO Queue.
         move = 0;
-        aiMovesCounter = 0;
 
         // Read or create the config file.
         fileManager = new FileManager();
@@ -162,7 +161,6 @@ public class SnakeGame extends ApplicationAdapter {
             else        delay = fileManager.getUserDelay();
 
             moveQueue.clear();
-            aiMovesCounter = 0;
         }
 
 
@@ -171,14 +169,12 @@ public class SnakeGame extends ApplicationAdapter {
 
             // Control AI movement.
             if (aiMode) {
-                if (moveQueue.size() < 1 || aiMovesCounter > 30) {
+                if (moveQueue.isEmpty()) {
                     //long t = System.currentTimeMillis();
-                    moveQueue.clear();
-                    moveQueue = snakeAI.getMoves(food.x, food.y, snake.tail);
+                    moveQueue = aStar.algorithm(food.x, food.y, snake.tail);
                     //System.out.println("Calc time: " + (System.currentTimeMillis() - t));
-                    aiMovesCounter = 0;
                 }
-                if (moveQueue.size() < 1) {
+                if (moveQueue.isEmpty()) {
                     System.out.println("Shit");
                 }
                 else {
@@ -200,7 +196,6 @@ public class SnakeGame extends ApplicationAdapter {
                     snake.moveX = 0;
                     snake.moveY = - snake.side;
                 }
-                aiMovesCounter += 1;
             }
 
             snake.move();

@@ -126,3 +126,5 @@ Thumbs.db
 
 /core/assets/snake.conf
 MANIFEST.MF
+
+core/out/*
