@@ -1,11 +1,12 @@
 package com.tesladodger.snake.ai;
 
-import java.util.Deque;
 import java.util.ArrayDeque;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
 
 /*  Thanks, wikipedia:                                                         *
@@ -223,7 +224,7 @@ public final class AStar {
         //noinspection Convert2Diamond
         List<Integer> openSet = new ArrayList<Integer>();
         //noinspection Convert2Diamond
-        Map<Integer, Node> closedSet = new HashMap<Integer, Node>();
+        HashSet<Integer> closedSet = new HashSet<Integer>();
 
 
         // Add the ID of the start node to the openSet.
@@ -255,7 +256,7 @@ public final class AStar {
             }
 
             // Add current to the closedSet, remove it from the openSet.
-            closedSet.put(current, gridMap.get(current));
+            closedSet.add(current);
             openSet.remove(indexLowestF);
 
             // Get the neighbors of current.
@@ -265,7 +266,7 @@ public final class AStar {
                 int neighbor = gridMap.get(current).neighbors.get(i);
 
                 // Ignore the neighbors in the closedSet and the obstacles.
-                if (closedSet.containsKey(neighbor) || gridMap.get(neighbor).isObstacle) {
+                if (closedSet.contains(neighbor) || gridMap.get(neighbor).isObstacle) {
                     continue;
                 }
 
