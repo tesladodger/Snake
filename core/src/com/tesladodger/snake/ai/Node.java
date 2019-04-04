@@ -10,28 +10,30 @@ final class Node {
     int f;
     int g;
     int h;
+    int nodeID;
 
     boolean isObstacle = false;
     boolean isGoal;
 
     @SuppressWarnings("Convert2Diamond")
-    List<Node> neighbors = new ArrayList<Node>();
-    Node cameFrom;
+    List<Integer> neighbors = new ArrayList<Integer>();
+    Integer cameFrom;
 
-    final void addNeighbors(Node[][] grid) {
-        if (x < 119) neighbors.add(grid[x + 1][y    ]);
-        if (x > 0  ) neighbors.add(grid[x - 1][y    ]);
-        if (y < 89 ) neighbors.add(grid[x    ][y + 1]);
-        if (y > 0  ) neighbors.add(grid[x    ][y - 1]);
+    final void addNeighbors() {
+        if (x < 119) neighbors.add(nodeID + 1);
+        if (x > 0  ) neighbors.add(nodeID - 1);
+        if (y < 89 ) neighbors.add(nodeID + 120);
+        if (y > 0  ) neighbors.add(nodeID - 120);
     }
 
     // Node constructor.
-    Node(int i, int j) {
-        x = i;
-        y = j;
+    Node(int nodeID, int x, int y) {
+        this.nodeID = nodeID;
+        this.x = x;
+        this.y = y;
         f = 10800;  // Basically the cost of going trough every node,
         g = 10800;  // simulating the default value of infinity.
         h = 0;
-        cameFrom = null;  // Initially this points to nowhere.
+        //cameFrom = null;  // Initially this points to nowhere.
     }
 }

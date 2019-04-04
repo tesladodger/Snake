@@ -42,7 +42,6 @@ public class SnakeGame extends ApplicationAdapter {
     private boolean aiMode;
 
     private FileManager fileManager;
-    private int hs;
     private int delay;
     private boolean showFPS;
 
@@ -91,7 +90,6 @@ public class SnakeGame extends ApplicationAdapter {
         // Read or create the config file.
         fileManager = new FileManager();
         fileManager.setup();
-        hs = fileManager.getHs();
         delay = fileManager.getUserDelay();
         int fontSize = fileManager.getFontSize();
         showFPS = fileManager.getShowFPS();
@@ -170,9 +168,9 @@ public class SnakeGame extends ApplicationAdapter {
             // Control AI movement.
             if (aiMode) {
                 if (moveQueue.isEmpty()) {
-                    //long t = System.currentTimeMillis();
+                    long t = System.currentTimeMillis();
                     moveQueue = aStar.algorithm(food.x, food.y, snake.tail);
-                    //System.out.println("Calc time: " + (System.currentTimeMillis() - t));
+                    System.out.println("Calc time: " + (System.currentTimeMillis() - t));
                 }
                 if (moveQueue.isEmpty()) {
                     System.out.println("Shit");
@@ -234,10 +232,7 @@ public class SnakeGame extends ApplicationAdapter {
             ateTail = snake.checkAteTail();
             // Update the high score.
             if (ateTail ) {
-                if ((snake.tail.size() / 2) - 1 > hs) {
-                    fileManager.update((snake.tail.size() / 2) - 1);
-                    hs = fileManager.getHs();
-                }
+                fileManager.update(snake.tail.size() / 2 - 1);
                 snake.restart();
             }
 
@@ -248,16 +243,18 @@ public class SnakeGame extends ApplicationAdapter {
 
     private void updateScore() {
         strB.setLength(0);
-        strB.append("High Score: ").append(hs);
-        strB.append("  |  Current: ").append((snake.tail.size() / 2) - 1);
+        strB.append("High Score: ").append(fileManager.getHs());
+        strB.append(" | Current: ").append((snake.tail.size() / 2) - 1);
+        strB.append(" | Average: ").append(fileManager.getHsAve());
+        strB.append(" | Games: ").append(fileManager.getNumGames());
         if (showFPS) {
-            strB.append("   FPS: ").append(Gdx.graphics.getFramesPerSecond());
+            strB.append(" | FPS: ").append(Gdx.graphics.getFramesPerSecond());
         }
         if (aiMode) {
-            strB.append("   AI ON");
+            strB.append(" | AI ON");
         }
         else {
-            strB.append("   Press A to toggle AI");
+            strB.append(" | Press A to toggle AI");
         }
         scoreLabel.setText(strB);
     }

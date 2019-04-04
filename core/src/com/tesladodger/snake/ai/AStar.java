@@ -1,9 +1,11 @@
 package com.tesladodger.snake.ai;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Deque;
+import java.util.ArrayDeque;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.List;
+import java.util.ArrayList;
 
 
 /*  Thanks, wikipedia:                                                         *
@@ -13,54 +15,69 @@ import java.util.List;
  *  And Coding Train:                                                          *
  * https://youtu.be/aKYlikFAV4k                                                *
  *                                                                             *
- *  This isn't optimal in terms of speed. This uses objects and linked lists,  *
- * because that's what I know how to use. I've seen stuff on StackOverflow with*
- * hash maps and references:                                                   *
- * https://codereview.stackexchange.com/questions/38376/a-search-algorithm     *
- *  It's a possible improvement to speed up the method.                        *
+ *  I'm using a Hash Map to get to the nodes. It's not actually faster because *
+ * the grid is very small, but I'm just happier not having to create all those *
+ * nodes every time the algorithm gets called.                                 *
  *                                                                             *
  *  What I'm doing is searching for the shortest path to the food, around some *
  * obstacles, the tail.                                                        *
  *  To allow it to use the walls to it's advantage I used an 'extended' grid:  *
- *          |    2  |                                                          *
- *   ************************      The center part is where the snake head is. *
- * 8 *****f*******f*******f** 7   I just set the food translated to each spot, *
- *   ************************     as well as the tail.                         *
- * __************************__    The algorithm searches for the nearest food.*
- *   ************************      This is achieved in two ways:               *
- *   *****f*******f*******f**      Instead of setting a single goal node, I use*
- * 3 ************************ 1   a boolean to tell the algorithm that node is *
- * __*********s**************__   a goal. This way I can set as many goals as I*
- *   ************************     want.                                        *
- *   *****f*******f*******f**      The heuristic also has to be changed to be  *
- *   ************************     the shortest distance to get to a goal. So I *
- *   ************************ 6   just calculate the distance to every goal and*
- *     5    |   4   |             return the minimum.                          *
- *                                 Using the Manhattan distance is the obvious *
- * choice for a square grid with no diagonal movement.                         */
+ *          8               2               7                                  *
+ *   * * * * * * * *|* * * * * * * *|* * * * * * * *                           *
+ *   * * * * *(f)* *|* * * * *(f)* *|* * * * *(f)* *                           *
+ *   * * * * * * * *|* * * * * * * *|* * * * * * * *                           *
+ *   * * * * * * * *|* * * * * * * *|* * * * * * * *                           *
+ *   -----------------------------------------------                           *
+ *   * * * * * * * *|* * * * * * * *|* * * * * * * *                           *
+ * 3 * * * * *(f)* *|* * * * *(f)* *|* * * * *(f)* * 1                         *
+ *   * * * * * * * *|* * * * * * * *|* * * * * * * *                           *
+ *   * * * * * * * *|*(s)* * * * * *|* * * * * * * *                           *
+ *   -----------------------------------------------                           *
+ *   * * * * * * * *|* * * * * * * *|* * * * * * * *                           *
+ *   * * * * *(f)* *|* * * * *(f)* *|* * * * *(f)* *                           *
+ *   * * * * * * * *|* * * * * * * *|* * * * * * * *                           *
+ *   * * * * * * * *|* * * * * * * *|* * * * * * * *                           *
+ *          5               4               6                                  *
+ *                                                                             *
+ *  The center part (0) is where the start of the algorithm is, represented by *
+ * an s. I just set the food location in the same spot for every part of the   *
+ * grid. Setting the obstacles is a little trickier, I explain bellow.         *
+ *  This algorithm is modified to search for the food with the shortest path,  *
+ * which is done in two ways:                                                  *
+ *  - Instead of setting a single node as the goal, I use a boolean in the node*
+ * to tell the algorithm that particular node is a goal. This way I can set as *
+ * many goals as I want.                                                       *
+ *  - The heuristic has to be changed. Instead of the shortest distance to the *
+ * goal, it is the shortest distance to any goal. So I just calculate the      *
+ * distance to every goal and return the minimum value.                        *
+ *  Using the Manhattan distance is the obvious choice for a square grid with  *
+ * no diagonal movement.                                                       */
 
 
 public final class AStar {
     @SuppressWarnings("Convert2Diamond")
     private Deque<Integer> moveQueue = new ArrayDeque<Integer>();
     @SuppressWarnings("Convert2Diamond")
-    private Deque<Node> path = new ArrayDeque<Node>();
-    // Initialize a 2D array of node objects.
-    private Node[][] grid = new Node[120][90];
+    private Deque<Integer> path = new ArrayDeque<Integer>();
+
+    // Initialize a Hash Map with nodeID as the key and the Node as the value.
+    @SuppressWarnings("Convert2Diamond")
+    private Map<Integer, Node> gridMap = new HashMap<Integer, Node>();
+
     private int[] food = new int[2];
 
 
-    private Deque<Node> reconstructPath(Node current) {
+    private Deque<Integer> reconstructPath(int current) {
         /*  Go trough the cameFrom nodes, adding them to the path list. Adding *
          * them to the beginning of the queue corrects the order (i.e. from the*
          * head to the food).                                                  */
         path.clear();
 
-        Node temp = current;
+        int temp = current;
         path.add(temp);
-        while (temp.cameFrom != null) {
-            path.addFirst(temp.cameFrom);
-            temp = temp.cameFrom;
+        while (gridMap.get(temp).cameFrom != null) {
+            path.addFirst(gridMap.get(temp).cameFrom);
+            temp = gridMap.get(temp).cameFrom;
         }
 
         return path;
@@ -69,26 +86,26 @@ public final class AStar {
 
     private Deque<Integer> convertToMoves() {
         // Turn the path of nodes into actual moves.
-        Node temp;
+        int temp;
 
         // Because I'm shrinking the path deque, I need to save the size.
         int max = path.size() - 1;
         for (int i = 0; i < max; i++) {
             temp = path.removeFirst();
-            if (path.peekFirst().x > temp.x) {
+            if (gridMap.get(path.peekFirst()).x > gridMap.get(temp).x) {
                 moveQueue.addLast(0);
             }
-            else if (path.peekFirst().x < temp.x) {
+            else if (gridMap.get(path.peekFirst()).x < gridMap.get(temp).x) {
                 moveQueue.addLast(2);
             }
-            else if (path.peekFirst().y > temp.y) {
+            else if (gridMap.get(path.peekFirst()).y > gridMap.get(temp).y) {
                 moveQueue.addLast(1);
             }
-            else if (path.peekFirst().y < temp.y) {
+            else if (gridMap.get(path.peekFirst()).y < gridMap.get(temp).y) {
                 moveQueue.addLast(3);
             }
         }
-
+        
         return moveQueue;
     }
 
@@ -98,19 +115,19 @@ public final class AStar {
     }
 
 
-    private int calculateHeuristic(Node node, int goalX, int goalY) {
+    private int calculateHeuristic(int startX, int startY, int goalX, int goalY) {
         /*  This method returns the distance to the closest goal, for a given  *
          * node, i.e. the heuristic of that node.                              */
         int[] distances = new int[9];
-        distances[0] = manhattanDist(node.x, node.y, goalX+40, goalY+30);
-        distances[1] = manhattanDist(node.x, node.y, goalX+80, goalY+30);
-        distances[2] = manhattanDist(node.x, node.y, goalX+40, goalY+60);
-        distances[3] = manhattanDist(node.x, node.y, goalX,    goalY+30);
-        distances[4] = manhattanDist(node.x, node.y, goalX+40, goalY);
-        distances[5] = manhattanDist(node.x, node.y, goalX,    goalY);
-        distances[6] = manhattanDist(node.x, node.y, goalX+80, goalY);
-        distances[7] = manhattanDist(node.x, node.y, goalX+80, goalY+60);
-        distances[8] = manhattanDist(node.x, node.y, goalX,    goalY+60);
+        distances[0] = manhattanDist(startX, startY, goalX+40, goalY+30);
+        distances[1] = manhattanDist(startX, startY, goalX+80, goalY+30);
+        distances[2] = manhattanDist(startX, startY, goalX+40, goalY+60);
+        distances[3] = manhattanDist(startX, startY, goalX,    goalY+30);
+        distances[4] = manhattanDist(startX, startY, goalX+40, goalY);
+        distances[5] = manhattanDist(startX, startY, goalX,    goalY);
+        distances[6] = manhattanDist(startX, startY, goalX+80, goalY);
+        distances[7] = manhattanDist(startX, startY, goalX+80, goalY+60);
+        distances[8] = manhattanDist(startX, startY, goalX,    goalY+60);
 
         int heuristic = distances[0];
         for (int i = 1; i < distances.length; i++) {
@@ -122,14 +139,17 @@ public final class AStar {
     }
 
 
-    // Main algorithm function. _______________________________________________
+    // Main algorithm function. _______________________________________________ //
     public Deque<Integer> algorithm(int foodX, int foodY, List<Integer> snake) {
 
 
-        // Populate the grid with nodes.
-        for (int i = 0; i < 120; i++) {
-            for (int j = 0; j < 90; j++) {
-                grid[i][j] = new Node(i, j);
+        // Populate the grid with nodes and add their ID to the HashMap.
+        int ID = 0;
+        for (int j = 0; j < 90; j++) {
+            for (int i = 0; i < 120; i++) {
+                Node node = new Node(ID, i, j);
+                gridMap.put(node.nodeID, node);
+                ID++;
             }
         }
 
@@ -137,15 +157,15 @@ public final class AStar {
         // Set the goals.
         food[0] = foodX / 16;
         food[1] = foodY / 16;
-        grid[food[0]+40][food[1]+30].isGoal = true;  // 0
-        grid[food[0]+80][food[1]+30].isGoal = true;  // 1
-        grid[food[0]+40][food[1]+60].isGoal = true;  // 2
-        grid[food[0]   ][food[1]+30].isGoal = true;  // 3
-        grid[food[0]+40][food[1]   ].isGoal = true;  // 4
-        grid[food[0]   ][food[1]   ].isGoal = true;  // 5
-        grid[food[0]+80][food[1]   ].isGoal = true;  // 6
-        grid[food[0]+80][food[1]+60].isGoal = true;  // 7
-        grid[food[0]   ][food[1]+60].isGoal = true;  // 8
+        gridMap.get( (food[0] + 40) + 120 * (food[1] + 30) ).isGoal = true;  // 0
+        gridMap.get( (food[0] + 80) + 120 * (food[1] + 30) ).isGoal = true;  // 1
+        gridMap.get( (food[0] + 40) + 120 * (food[1] + 60) ).isGoal = true;  // 2
+        gridMap.get( (food[0]     ) + 120 * (food[1] + 30) ).isGoal = true;  // 3
+        gridMap.get( (food[0] + 40) + 120 * (food[1]     ) ).isGoal = true;  // 4
+        gridMap.get( (food[0]     ) + 120 * (food[1]     ) ).isGoal = true;  // 5
+        gridMap.get( (food[0] + 80) + 120 * (food[1]     ) ).isGoal = true;  // 6
+        gridMap.get( (food[0] + 80) + 120 * (food[1] + 60) ).isGoal = true;  // 7
+        gridMap.get( (food[0]     ) + 120 * (food[1] + 60) ).isGoal = true;  // 8
 
 
         // Set the obstacles.
@@ -158,50 +178,55 @@ public final class AStar {
             *  This really makes this algorithm work and not get stuck when    *
             * it doesn't have to (it's like predicting the future).            *
             *  I start at 2 because the tip of the tail is never an obstacle.  */
+            int bitX = snake.get(i)/16;
+            int bitY = snake.get(i+1)/16;
             if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16   , snake.get(i+1)/16   ) <= i / 2 + 1) {
-                grid[(snake.get(i) / 16) + 40][(snake.get(i + 1) / 16) + 30].isObstacle = true;    // 0
+                gridMap.get( (bitX + 40) + 120 * (bitY + 30) ).isObstacle = true;
             }
             if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16+40, snake.get(i+1)/16   ) <= i / 2 + 1) {
-                grid[(snake.get(i) / 16) + 80][(snake.get(i + 1) / 16) + 30].isObstacle = true;    // 1
+                gridMap.get( (bitX + 80) + 120 * (bitY + 30) ).isObstacle = true;
             }
             if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16   , snake.get(i+1)/16+30) <= i / 2 + 1) {
-                grid[(snake.get(i) / 16) + 40][(snake.get(i + 1) / 16) + 60].isObstacle = true;    // 2
+                gridMap.get( (bitX + 40) + 120 * (bitY + 60) ).isObstacle = true;
             }
             if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16-40, snake.get(i+1)/16   ) <= i / 2 + 1) {
-                grid[(snake.get(i) / 16)     ][(snake.get(i + 1) / 16) + 30].isObstacle = true;    // 3
+                gridMap.get( (bitX     ) + 120 * (bitY + 30) ).isObstacle = true;
             }
             if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16   , snake.get(i+1)/16-30) <= i / 2 + 1) {
-                grid[(snake.get(i) / 16) + 40][(snake.get(i + 1) / 16)     ].isObstacle = true;    // 4
+                gridMap.get( (bitX + 40) + 120 * (bitY     ) ).isObstacle = true;
             }
             if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16-40, snake.get(i+1)/16-30) <= i / 2 + 1) {
-                grid[(snake.get(i) / 16)     ][(snake.get(i + 1) / 16)     ].isObstacle = true;    // 5
+                gridMap.get( (bitX     ) + 120 * (bitY     ) ).isObstacle = true;
             }
             if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16+40, snake.get(i+1)/16-30) <= i / 2 + 1) {
-                grid[(snake.get(i) / 16) + 80][(snake.get(i + 1) / 16)     ].isObstacle = true;    // 6
+                gridMap.get( (bitX + 80) + 120 * (bitY     ) ).isObstacle = true;
             }
             if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16+40, snake.get(i+1)/16+30) <= i / 2 + 1) {
-                grid[(snake.get(i) / 16) + 80][(snake.get(i + 1) / 16) + 60].isObstacle = true;    // 7
+                gridMap.get( (bitX + 80) + 120 * (bitY + 60) ).isObstacle = true;
             }
             if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16-40, snake.get(i+1)/16+30) <= i / 2 + 1) {
-                grid[(snake.get(i) / 16)     ][(snake.get(i + 1) / 16) + 60].isObstacle = true;    // 8
+                gridMap.get( (bitX     ) + 120 * (bitY + 60) ).isObstacle = true;
             }
         }
 
 
-        // Start and goal nodes (translated to the grid).
-        Node start = grid[tempHeadX + 40][tempHeadY + 30];
+        // ID of the start node.
+        int start = (tempHeadX + 40) + 120 * (tempHeadY + 30);
 
 
         // Purely heuristic value for the first node.
-        start.g = 0;
-        start.f = calculateHeuristic(start, food[0], food[1]);
+        gridMap.get(start).g = 0;
+        gridMap.get(start).f = calculateHeuristic(gridMap.get(start).x, gridMap.get(start).y, food[0], food[1]);
 
 
         // Open and closed sets.
-        @SuppressWarnings("Convert2Diamond")
-        List<Node> openSet = new ArrayList<Node>();
-        @SuppressWarnings("Convert2Diamond")
-        List<Node> closedSet = new ArrayList<Node>();
+        //noinspection Convert2Diamond
+        List<Integer> openSet = new ArrayList<Integer>();
+        //noinspection Convert2Diamond
+        Map<Integer, Node> closedSet = new HashMap<Integer, Node>();
+
+
+        // Add the ID of the start node to the openSet.
         openSet.add(start);
 
 
@@ -215,14 +240,14 @@ public final class AStar {
                  * searching for a lower f. This is faster, since all paths    *
                  * without obstacles have the same cost in a square grid. Also *
                  * the value isn't changed as much.                            */
-                if (openSet.get(i).f < openSet.get(indexLowestF).f) {
+                if (gridMap.get(openSet.get(i)).f < gridMap.get(openSet.get(indexLowestF)).f) {
                     indexLowestF = i;
                 }
             }
-            // Current is that node.
-            Node current = openSet.get(indexLowestF);
+            // Current is the ID of that node.
+            int current = openSet.get(indexLowestF);
 
-            if (current.isGoal) {
+            if (gridMap.get(current).isGoal) {
                 // Done, let's recreate the path.
                 path = reconstructPath(current);
                 // Get the moves and return them.
@@ -230,38 +255,39 @@ public final class AStar {
             }
 
             // Add current to the closedSet, remove it from the openSet.
-            closedSet.add(current);
+            closedSet.put(current, gridMap.get(current));
             openSet.remove(indexLowestF);
 
             // Get the neighbors of current.
-            current.addNeighbors(grid);
+            gridMap.get(current).addNeighbors();
             // For every neighbor of current:
-            for (int i = 0; i < current.neighbors.size(); i++) {
-                Node neighbor = current.neighbors.get(i);
+            for (int i = 0; i < gridMap.get(current).neighbors.size(); i++) {
+                int neighbor = gridMap.get(current).neighbors.get(i);
 
                 // Ignore the neighbors in the closedSet and the obstacles.
-                if (closedSet.contains(neighbor) || neighbor.isObstacle) {
+                if (closedSet.containsKey(neighbor) || gridMap.get(neighbor).isObstacle) {
                     continue;
                 }
 
                 // The cost of a move in the grid is always 1.
-                int tentativeGScore = current.g + 1;
+                int tentativeGScore = gridMap.get(current).g + 1;
 
                 // See if it's a new node.
                 if (!openSet.contains(neighbor)) {
                     // Add it to the open set.
                     openSet.add(neighbor);
                 }
-                else if (tentativeGScore >= neighbor.g) {
+                else if (tentativeGScore >= gridMap.get(neighbor).g) {
                     // If this path is worse, ignore it.
                     continue;
                 }
 
                 // If it gets here, this is the best path for this node until now.
-                neighbor.cameFrom = current;
-                neighbor.g = tentativeGScore;
-                neighbor.h = calculateHeuristic(neighbor, food[0], food[1]);
-                neighbor.f = neighbor.g + neighbor.h;
+                gridMap.get(neighbor).cameFrom = current;
+                gridMap.get(neighbor).g = tentativeGScore;
+                gridMap.get(neighbor).h = calculateHeuristic(gridMap.get(neighbor).x, gridMap.get(neighbor).y,
+                        food[0], food[1]);
+                gridMap.get(neighbor).f = gridMap.get(neighbor).g + gridMap.get(neighbor).h;
 
             }
         } // End of the A* loop.

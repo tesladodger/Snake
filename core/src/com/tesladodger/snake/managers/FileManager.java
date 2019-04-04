@@ -8,6 +8,8 @@ import java.util.Scanner;
 
 public final class FileManager {
     private int hs;
+    private float hsAve;
+    private int numGames;
     private int userDelay;
     private int aiDelay;
     private int fontSize;
@@ -22,6 +24,8 @@ public final class FileManager {
                 PrintWriter pr = new PrintWriter("snake.conf", "UTF-8");
 
                 pr.println("high-score = 0");
+                pr.println("average = 0");
+                pr.println("games = 0");
                 pr.println("user-delay = 100");
                 pr.println("ai-delay = 100");
                 pr.println("font-size = 12");
@@ -34,7 +38,7 @@ public final class FileManager {
             }
 
             // Set the variables.
-            hs = 0; userDelay = 100; aiDelay = 100; fontSize = 12; showFPS = false;
+            hs = 0; hsAve = 0; numGames = 0; userDelay = 100; aiDelay = 100; fontSize = 12; showFPS = false;
 
         }
         else {
@@ -43,6 +47,12 @@ public final class FileManager {
 
                 String[] line = fs.nextLine().split(" = ");
                 hs = Integer.parseInt(line[1]);
+
+                line = fs.nextLine().split(" = ");
+                hsAve = Float.parseFloat(line[1]);
+
+                line = fs.nextLine().split(" = ");
+                numGames = Integer.parseInt(line[1]);
 
                 line = fs.nextLine().split(" = ");
                 userDelay = Integer.parseInt(line[1]);
@@ -72,6 +82,14 @@ public final class FileManager {
         return hs;
     }
 
+    public float getHsAve() {
+        return hsAve;
+    }
+
+    public int getNumGames() {
+        return numGames;
+    }
+
     public int getUserDelay() {
         return userDelay;
     }
@@ -89,13 +107,21 @@ public final class FileManager {
     }
 
 
-    public void update(int newHS) {
-        hs = newHS;
+    public void update(int score) {
+        if (score > hs) {
+            hs = score;
+        }
+
+        hsAve = ((hsAve * numGames) + score) / (numGames + 1);
+        numGames += 1;
+
         try {
             @SuppressWarnings("CharsetObjectCanBeUsed")
             PrintWriter pr = new PrintWriter("snake.conf", "UTF-8");
 
             pr.println("high-score = " + hs);
+            pr.println("average = " + hsAve);
+            pr.println("games = " + numGames);
             pr.println("user-delay = " + userDelay);
             pr.println("ai-delay = " + aiDelay);
             pr.println("font-size = " + fontSize);
