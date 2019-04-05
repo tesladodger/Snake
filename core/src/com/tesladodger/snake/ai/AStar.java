@@ -9,60 +9,48 @@ import java.util.List;
 import java.util.Map;
 
 
-/*  Thanks, wikipedia:                                                         *
- * https://en.wikipedia.org/wiki/A*_search_algorithm                           *
- *  This question and answer:                                                  *
- * https://gamedev.stackexchange.com  question 167824                          *
- *  And Coding Train:                                                          *
- * https://youtu.be/aKYlikFAV4k                                                *
- *                                                                             *
- *  I'm using a Hash Map to get to the nodes. It's not actually faster because *
- * the grid is very small, but I'm just happier not having to create all those *
- * nodes. The openSet, closedSet and path all contain the node IDs in the map, *
- * not the nodes themselves.                                                   *
- *                                                                             *
- *  What I'm doing is searching for the shortest path to the food, around some *
- * obstacles, the tail.                                                        *
- *  To allow it to use the walls to it's advantage I used an 'extended' grid:  *
- *          8               2               7                                  *
- *   * * * * * * * *|* * * * * * * *|* * * * * * * *                           *
- *   * * * * *(f)* *|* * * * *(f)* *|* * * * *(f)* *                           *
- *   * * * * * * * *|* * * * * * * *|* * * * * * * *                           *
- *   * * * * * * * *|* * * * * * * *|* * * * * * * *                           *
- *   -----------------------------------------------                           *
- *   * * * * * * * *|* * * * * * * *|* * * * * * * *                           *
- * 3 * * * * *(f)* *|* * * * *(f)* *|* * * * *(f)* * 1                         *
- *   * * * * * * * *|* * * * * * * *|* * * * * * * *                           *
- *   * * * * * * * *|*(s)* * * * * *|* * * * * * * *                           *
- *   -----------------------------------------------                           *
- *   * * * * * * * *|* * * * * * * *|* * * * * * * *                           *
- *   * * * * *(f)* *|* * * * *(f)* *|* * * * *(f)* *                           *
- *   * * * * * * * *|* * * * * * * *|* * * * * * * *                           *
- *   * * * * * * * *|* * * * * * * *|* * * * * * * *                           *
- *          5               4               6                                  *
- *                                                                             *
- *  The center part (0) is where the start of the algorithm is, represented by *
- * an s. I just set the food location in the same spot for every part of the   *
- * grid. Setting the obstacles is a little trickier, I explain bellow.         *
- *  This algorithm is modified to search for the food with the shortest path,  *
- * which is done in two ways:                                                  *
- *  - Instead of setting a single node as the goal, I use a boolean in the node*
- * to tell the algorithm that particular node is a goal. This way I can set as *
- * many goals as I want.                                                       *
- *  - The heuristic has to be changed. Instead of the shortest distance to the *
- * goal, it is the shortest distance to any goal. So I just calculate the      *
- * distance to every goal and return the minimum value.                        *
- *  Using the Manhattan distance is the obvious choice for a square grid with  *
- * no diagonal movement.                                                       *
- *  The survive mode happens when the moveQueue returns empty. Instead of      *
- * searching for food, the goals are evey node close to the head:              *
- *  ___________                                                                *
- * | 2 | 4 | 7 |   The algorithm favors the negative x and y directions, making*
- * |___|___|___|  a zigzag pattern.                                            *
- * | 1 | h | 6 |   If it gets trapped this makes it avoid the tail, sometimes  *
- * |___|___|___|  long enough to find a solution.                              *
- * | 0 | 3 | 5 |                                                               *
- * |___|___|___|                                                               */
+/*  Thanks, wikipedia:                                                                            *
+ * https://en.wikipedia.org/wiki/A*_search_algorithm                                              *
+ *  This question and answer:                                                                     *
+ * https://gamedev.stackexchange.com  question 167824                                             *
+ *  And Coding Train:                                                                             *
+ * https://youtu.be/aKYlikFAV4k                                                                   *
+ *                                                                                                *
+ *  I'm using a Hash Map to get to the nodes. It's not actually faster because the grid is very   *
+ * small, I just didn't like creating unnecessary Node objects.                                   *
+ *  The openSet, closedSet and path all contain the node IDs in the map.                          *
+ *                                                                                                *
+ *  What the algorithm ultimately does is search for the shortest path to the food, around some   *
+ * obstacles, the tail. I wanted to be able to cross the walls, so I create an 'extended' grid:   *
+ *          8               2               7              The center part (0) is where the start *
+ *   * * * * * * * *|* * * * * * * *|* * * * * * * *      is, represented by an s. I just set the *
+ *   * * * * *(f)* *|* * * * *(f)* *|* * * * *(f)* *      food location in the same spot for every*
+ *   * * * * * * * *|* * * * * * * *|* * * * * * * *      section. Setting the obstacles is a     *
+ *   * * * * * * * *|* * * * * * * *|* * * * * * * *      little trickier, I explain bellow.      *
+ *   -----------------------------------------------       This algorithm is modified to search   *
+ *   * * * * * * * *|* * * * * * * *|* * * * * * * *      for the food that can be reached with   *
+ * 3 * * * * *(f)* *|* * * * *(f)* *|* * * * *(f)* * 1    the shortest path, which is done in two *
+ *   * * * * * * * *|* * * * * * * *|* * * * * * * *      ways:                                   *
+ *   * * * * * * * *|*(s)* * * * * *|* * * * * * * *       - Instead of setting a single node as  *
+ *   -----------------------------------------------      the goal, I use a boolean to tell the   *
+ *   * * * * * * * *|* * * * * * * *|* * * * * * * *      algorithm that that particular node is  *
+ *   * * * * *(f)* *|* * * * *(f)* *|* * * * *(f)* *      a goal. This allows me to set as many   *
+ *   * * * * * * * *|* * * * * * * *|* * * * * * * *      goals as I want.                        *
+ *   * * * * * * * *|* * * * * * * *|* * * * * * * *       - The heuristic needs to be changed.   *
+ *          5               4               6             Instead of the shortest distance to the *
+ *                                                        goal, it is the shortest distance to any*
+ * goal. So I just calculate the distance to every goal and return the minimum value.             *
+ *  Using the Manhattan distance is the obvious choice for a square grid with no diagonals.       *
+ *                                                                                                *
+ *  The survive mode happens when the moveQueue returns empty. Instead of searching for food, the *
+ * goals are every node neighboring the head:                                                     *
+ *  ___________                                                                                   *
+ * | 2 | 4 | 7 |   The algorithm favors the negative x and y directions, making a zigzag pattern. *
+ * |___|___|___|   If the snake or the food is trapped the makes it avoid the tail, sometimes long*
+ * | 1 | h | 6 |  enough so that a solution can be found.                                         *
+ * |___|___|___|                                                                                  *
+ * | 0 | 3 | 5 |                                                                                  *
+ * |___|___|___|                                                                                  */
 
 
 public final class AStar {
@@ -79,9 +67,9 @@ public final class AStar {
 
 
     private Deque<Integer> reconstructPath(int current) {
-        /*  Go trough the cameFrom nodes, adding them to the path list. Adding *
-         * them to the beginning of the queue corrects the order (i.e. from the*
-         * head to the food).                                                  */
+        /*  This method goes through the cameFrom node IDs and reconstructs    *
+         * a path. The Deque is being used as a Stack, so that the returned    *
+         * sequence is in the correct order, i.e. from head to food.           */
         path.clear();
 
         int temp = current;
@@ -96,7 +84,8 @@ public final class AStar {
 
 
     private Deque<Integer> convertToMoves() {
-        // Turn the path of nodes into actual moves.
+        /*  Turn the path of IDs into actual moves, using the x and y values of*
+         * the nodes.                                                          */
         int temp;
 
         // Because I'm shrinking the path deque, I need to save the size.
@@ -150,7 +139,7 @@ public final class AStar {
     }
 
 
-    // Main algorithm function. _______________________________________________ //
+    // Main algorithm function. _________________________________________________________________ //
     public Deque<Integer> algorithm(int foodX, int foodY, List<Integer> snake, boolean survive) {
 
 
@@ -169,6 +158,7 @@ public final class AStar {
         food[0] = foodX / 16;
         food[1] = foodY / 16;
         if (survive) {
+            // The food is actually the head.
             gridMap.get( (food[0] + 39) + 120 * (food[1] + 29) ).isGoal = true;  // 0
             gridMap.get( (food[0] + 39) + 120 * (food[1] + 30) ).isGoal = true;  // 1
             gridMap.get( (food[0] + 39) + 120 * (food[1] + 31) ).isGoal = true;  // 2
@@ -278,8 +268,9 @@ public final class AStar {
             closedSet.add(current);
             openSet.remove(indexLowestF);
 
-            // Get the neighbors of current.
+            // Set the neighbors of current.
             gridMap.get(current).addNeighbors();
+
             // For every neighbor of current:
             for (int i = 0; i < gridMap.get(current).neighbors.size(); i++) {
                 int neighbor = gridMap.get(current).neighbors.get(i);

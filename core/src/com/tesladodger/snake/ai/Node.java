@@ -21,6 +21,7 @@ final class Node {
     Integer cameFrom;
 
     final void addNeighbors() {
+        // This method adds the IDs of this node's neighbors to the array.
         if (x < 119) neighbors.add(nodeID + 1);    // Right
         if (x > 0  ) neighbors.add(nodeID - 1);    // Left
         if (y < 89 ) neighbors.add(nodeID + 120);  // Top
