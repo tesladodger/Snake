@@ -168,14 +168,15 @@ public class SnakeGame extends ApplicationAdapter {
             // Control AI movement.
             if (aiMode) {
                 if (moveQueue.isEmpty()) {
-                    long t = System.currentTimeMillis();
-                    moveQueue = aStar.algorithm(food.x, food.y, snake.tail);
-                    System.out.println("Calc time: " + (System.currentTimeMillis() - t));
+                    //long t = System.currentTimeMillis();
+                    moveQueue = aStar.algorithm(food.x, food.y, snake.tail, false);
+                    //System.out.println("Calc time: " + (System.currentTimeMillis() - t));
                 }
                 if (moveQueue.isEmpty()) {
                     System.out.println("Shit");
+                    moveQueue = aStar.algorithm(snake.x, snake.y, snake.tail, true);
                 }
-                else {
+                if (!moveQueue.isEmpty()) {
                     move = moveQueue.removeFirst();
                 }
                 if (move == 0 && snake.moveX == 0) {

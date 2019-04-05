@@ -18,7 +18,8 @@ import java.util.Map;
  *                                                                             *
  *  I'm using a Hash Map to get to the nodes. It's not actually faster because *
  * the grid is very small, but I'm just happier not having to create all those *
- * nodes every time the algorithm gets called.                                 *
+ * nodes. The openSet, closedSet and path all contain the node IDs in the map, *
+ * not the nodes themselves.                                                   *
  *                                                                             *
  *  What I'm doing is searching for the shortest path to the food, around some *
  * obstacles, the tail.                                                        *
@@ -52,7 +53,16 @@ import java.util.Map;
  * goal, it is the shortest distance to any goal. So I just calculate the      *
  * distance to every goal and return the minimum value.                        *
  *  Using the Manhattan distance is the obvious choice for a square grid with  *
- * no diagonal movement.                                                       */
+ * no diagonal movement.                                                       *
+ *  The survive mode happens when the moveQueue returns empty. Instead of      *
+ * searching for food, the goals are evey node close to the head:              *
+ *  ___________                                                                *
+ * | 2 | 4 | 7 |   The algorithm favors the negative x and y directions, making*
+ * |___|___|___|  a zigzag pattern.                                            *
+ * | 1 | h | 6 |   If it gets trapped this makes it avoid the tail, sometimes  *
+ * |___|___|___|  long enough to find a solution.                              *
+ * | 0 | 3 | 5 |                                                               *
+ * |___|___|___|                                                               */
 
 
 public final class AStar {
@@ -141,10 +151,10 @@ public final class AStar {
 
 
     // Main algorithm function. _______________________________________________ //
-    public Deque<Integer> algorithm(int foodX, int foodY, List<Integer> snake) {
+    public Deque<Integer> algorithm(int foodX, int foodY, List<Integer> snake, boolean survive) {
 
 
-        // Populate the grid with nodes and add their ID to the HashMap.
+        // Initialize the nodes and add their ID to the HashMap.
         int ID = 0;
         for (int j = 0; j < 90; j++) {
             for (int i = 0; i < 120; i++) {
@@ -158,55 +168,66 @@ public final class AStar {
         // Set the goals.
         food[0] = foodX / 16;
         food[1] = foodY / 16;
-        gridMap.get( (food[0] + 40) + 120 * (food[1] + 30) ).isGoal = true;  // 0
-        gridMap.get( (food[0] + 80) + 120 * (food[1] + 30) ).isGoal = true;  // 1
-        gridMap.get( (food[0] + 40) + 120 * (food[1] + 60) ).isGoal = true;  // 2
-        gridMap.get( (food[0]     ) + 120 * (food[1] + 30) ).isGoal = true;  // 3
-        gridMap.get( (food[0] + 40) + 120 * (food[1]     ) ).isGoal = true;  // 4
-        gridMap.get( (food[0]     ) + 120 * (food[1]     ) ).isGoal = true;  // 5
-        gridMap.get( (food[0] + 80) + 120 * (food[1]     ) ).isGoal = true;  // 6
-        gridMap.get( (food[0] + 80) + 120 * (food[1] + 60) ).isGoal = true;  // 7
-        gridMap.get( (food[0]     ) + 120 * (food[1] + 60) ).isGoal = true;  // 8
+        if (survive) {
+            gridMap.get( (food[0] + 39) + 120 * (food[1] + 29) ).isGoal = true;  // 0
+            gridMap.get( (food[0] + 39) + 120 * (food[1] + 30) ).isGoal = true;  // 1
+            gridMap.get( (food[0] + 39) + 120 * (food[1] + 31) ).isGoal = true;  // 2
+            gridMap.get( (food[0] + 40) + 120 * (food[1] + 29) ).isGoal = true;  // 3
+            gridMap.get( (food[0] + 40) + 120 * (food[1] + 31) ).isGoal = true;  // 4
+            gridMap.get( (food[0] + 41) + 120 * (food[1] + 29) ).isGoal = true;  // 5
+            gridMap.get( (food[0] + 41) + 120 * (food[1] + 30) ).isGoal = true;  // 6
+            gridMap.get( (food[0] + 41) + 120 * (food[1] + 31) ).isGoal = true;  // 7
+        }
+        else {
+            gridMap.get((food[0] + 40) + 120 * (food[1] + 30)).isGoal = true;  // 0
+            gridMap.get((food[0] + 80) + 120 * (food[1] + 30)).isGoal = true;  // 1
+            gridMap.get((food[0] + 40) + 120 * (food[1] + 60)).isGoal = true;  // 2
+            gridMap.get((food[0]     ) + 120 * (food[1] + 30)).isGoal = true;  // 3
+            gridMap.get((food[0] + 40) + 120 * (food[1]     )).isGoal = true;  // 4
+            gridMap.get((food[0]     ) + 120 * (food[1]     )).isGoal = true;  // 5
+            gridMap.get((food[0] + 80) + 120 * (food[1]     )).isGoal = true;  // 6
+            gridMap.get((food[0] + 80) + 120 * (food[1] + 60)).isGoal = true;  // 7
+            gridMap.get((food[0]     ) + 120 * (food[1] + 60)).isGoal = true;  // 8
+        }
 
 
         // Set the obstacles.
         int tempHeadX = snake.get(snake.size()-2)/16;
         int tempHeadY = snake.get(snake.size()-1)/16;
-        for (int i = 2; i < snake.size() - 2; i += 2) {
-            /* A part of the tail is only an obstacle if it can be reached.    *
-            *  For example, if the second to last bit of the tail is more than *
-            * one move away it's not actually an obstacle.                     *
-            *  This really makes this algorithm work and not get stuck when    *
-            * it doesn't have to (it's like predicting the future).            *
-            *  I start at 2 because the tip of the tail is never an obstacle.  */
+        for (int i = 0; i < snake.size() - 2; i += 2) {
+            /*  A part of the tail is only an obstacle if it can be reached.   *
+             *  For example, if the second to last bit of the tail is more than*
+             * one move away it's not actually an obstacle.                    *
+             *  This really makes this algorithm work and not get stuck when   *
+             * it doesn't have to.                                             */
             int bitX = snake.get(i)/16;
             int bitY = snake.get(i+1)/16;
-            if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16   , snake.get(i+1)/16   ) <= i / 2 + 1) {
-                gridMap.get( (bitX + 40) + 120 * (bitY + 30) ).isObstacle = true;
+            if (manhattanDist(tempHeadX, tempHeadY, bitX   , bitY   ) <= i / 2 + 1) {
+                gridMap.get( (bitX + 40) + 120 * (bitY + 30) ).isObstacle = true;  // 0
             }
-            if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16+40, snake.get(i+1)/16   ) <= i / 2 + 1) {
-                gridMap.get( (bitX + 80) + 120 * (bitY + 30) ).isObstacle = true;
+            if (manhattanDist(tempHeadX, tempHeadY, bitX+40, bitY   ) <= i / 2 + 1) {
+                gridMap.get( (bitX + 80) + 120 * (bitY + 30) ).isObstacle = true;  // 1
             }
-            if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16   , snake.get(i+1)/16+30) <= i / 2 + 1) {
-                gridMap.get( (bitX + 40) + 120 * (bitY + 60) ).isObstacle = true;
+            if (manhattanDist(tempHeadX, tempHeadY, bitX   , bitY+30) <= i / 2 + 1) {
+                gridMap.get( (bitX + 40) + 120 * (bitY + 60) ).isObstacle = true;  // 2
             }
-            if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16-40, snake.get(i+1)/16   ) <= i / 2 + 1) {
-                gridMap.get( (bitX     ) + 120 * (bitY + 30) ).isObstacle = true;
+            if (manhattanDist(tempHeadX, tempHeadY, bitX-40, bitY   ) <= i / 2 + 1) {
+                gridMap.get( (bitX     ) + 120 * (bitY + 30) ).isObstacle = true;  // 3
             }
-            if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16   , snake.get(i+1)/16-30) <= i / 2 + 1) {
-                gridMap.get( (bitX + 40) + 120 * (bitY     ) ).isObstacle = true;
+            if (manhattanDist(tempHeadX, tempHeadY, bitX   , bitY-30) <= i / 2 + 1) {
+                gridMap.get( (bitX + 40) + 120 * (bitY     ) ).isObstacle = true;  // 4
             }
-            if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16-40, snake.get(i+1)/16-30) <= i / 2 + 1) {
-                gridMap.get( (bitX     ) + 120 * (bitY     ) ).isObstacle = true;
+            if (manhattanDist(tempHeadX, tempHeadY, bitX-40, bitY-30) <= i / 2 + 1) {
+                gridMap.get( (bitX     ) + 120 * (bitY     ) ).isObstacle = true;  // 5
             }
-            if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16+40, snake.get(i+1)/16-30) <= i / 2 + 1) {
-                gridMap.get( (bitX + 80) + 120 * (bitY     ) ).isObstacle = true;
+            if (manhattanDist(tempHeadX, tempHeadY, bitX+40, bitY-30) <= i / 2 + 1) {
+                gridMap.get( (bitX + 80) + 120 * (bitY     ) ).isObstacle = true;  // 6
             }
-            if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16+40, snake.get(i+1)/16+30) <= i / 2 + 1) {
-                gridMap.get( (bitX + 80) + 120 * (bitY + 60) ).isObstacle = true;
+            if (manhattanDist(tempHeadX, tempHeadY, bitX+40, bitY+30) <= i / 2 + 1) {
+                gridMap.get( (bitX + 80) + 120 * (bitY + 60) ).isObstacle = true;  // 7
             }
-            if (manhattanDist(tempHeadX,tempHeadY, snake.get(i)/16-40, snake.get(i+1)/16+30) <= i / 2 + 1) {
-                gridMap.get( (bitX     ) + 120 * (bitY + 60) ).isObstacle = true;
+            if (manhattanDist(tempHeadX, tempHeadY, bitX-40, bitY+30) <= i / 2 + 1) {
+                gridMap.get( (bitX     ) + 120 * (bitY + 60) ).isObstacle = true;  // 8
             }
         }
 
@@ -237,10 +258,8 @@ public final class AStar {
             // Find the node in the openSet with the lowest f.
             int indexLowestF = openSet.size() - 1;
             for (int i = openSet.size() - 1; i >= 0; i--) {
-                /* Implement LIFO by starting at the end of the list and only  *
-                 * searching for a lower f. This is faster, since all paths    *
-                 * without obstacles have the same cost in a square grid. Also *
-                 * the value isn't changed as much.                            */
+                /*  Solve ties in a LIFO sort of way, since all paths without  *
+                 * obstacles have the same cost in a grid with no diagonals.   */
                 if (gridMap.get(openSet.get(i)).f < gridMap.get(openSet.get(indexLowestF)).f) {
                     indexLowestF = i;
                 }
