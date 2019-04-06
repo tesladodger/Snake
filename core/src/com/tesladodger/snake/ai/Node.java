@@ -37,4 +37,5 @@ final class Node {
         g = 10800;  // simulating the default value of infinity.
         h = 0;
     }
+
 }

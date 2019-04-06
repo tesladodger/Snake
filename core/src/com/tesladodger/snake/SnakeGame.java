@@ -63,7 +63,7 @@ public class SnakeGame extends ApplicationAdapter {
         int mag = ran.nextInt(2) * 2 - 1;  // -1 or 1
         int raX = ran.nextInt(11) + 15;    // 15 to 25
         int raY = ran.nextInt(11) + 10;    // 10 to 20
-        snake      = new Snake(dir, mag, raX, raY);
+        snake = new Snake(dir, mag, raX, raY);
         // noinspection Convert2Diamond
         snake.tail = new ArrayList<Integer>();
         snake.tail.add(snake.x);
@@ -71,9 +71,8 @@ public class SnakeGame extends ApplicationAdapter {
         snake.justAte = false;
         ateTail = false;
 
-        food   = new Food();
-        food.x = food.getLocation(ran.nextInt(40));
-        food.y = food.getLocation(ran.nextInt(30));
+        food = new Food();
+        food.reset(snake.tail);
 
         /*  Boolean to avoid clicking twice before the counter to move is up,  *
          * preventing the player from turning the snake back on itself.        *
@@ -100,14 +99,15 @@ public class SnakeGame extends ApplicationAdapter {
         ftfp.size = fontSize;
         BitmapFont font = ftfg.generateFont(ftfp);
         scoreLabel = new Label("Send Nudes", new Label.LabelStyle(font, Color.GRAY));
-        strB       = new StringBuilder();
-        stage      = new Stage();
+        strB = new StringBuilder();
+        stage = new Stage();
         updateScore();
         stage.addActor(scoreLabel);
 
         // Start the chronometer.
         startTime = System.currentTimeMillis();
     }
+
 
     @Override
     public void render() {
@@ -121,14 +121,14 @@ public class SnakeGame extends ApplicationAdapter {
         for (int i = 0; i < snake.tail.size(); i += 2) {
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
             shapeRenderer.setColor(Color.WHITE);
-            shapeRenderer.rect(snake.tail.get(i), snake.tail.get(i + 1), snake.side, snake.side);
+            shapeRenderer.rect(snake.tail.get(i), snake.tail.get(i+1), snake.side, snake.side);
             shapeRenderer.end();
         }
 
         // Render the food.
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(Color.RED);
-        shapeRenderer.rect(food.x, food.y, food.side, food.side);
+        shapeRenderer.rect(food.x, food.y, snake.side, snake.side);
         shapeRenderer.end();
 
         // Check user input.
@@ -154,10 +154,8 @@ public class SnakeGame extends ApplicationAdapter {
         }
         else if (Gdx.input.isKeyJustPressed(Keys.A)) {
             aiMode = !aiMode;
-
             if (aiMode) delay = fileManager.getAiDelay();
-            else        delay = fileManager.getUserDelay();
-
+            else delay = fileManager.getUserDelay();
             moveQueue.clear();
         }
 
@@ -175,6 +173,7 @@ public class SnakeGame extends ApplicationAdapter {
                 if (moveQueue.isEmpty()) {
                     System.out.println("Shit");
                     moveQueue = aStar.algorithm(snake.x, snake.y, snake.tail, true);
+                    System.out.println(moveQueue.size());
                 }
                 if (!moveQueue.isEmpty()) {
                     move = moveQueue.removeFirst();
@@ -201,30 +200,13 @@ public class SnakeGame extends ApplicationAdapter {
 
             buttonPressed = false;
 
-            // Check out of bounds and move accordingly.
-            snake.checkBounds();
-
             // Reset the timer.
             startTime = System.currentTimeMillis();
 
             // Eating the food.
             if (snake.x == food.x && snake.y == food.y) {
                 snake.justAte = true;  // This only has effect in the next move.
-
-                // Don't allow the next food to be where the snake is.
-                boolean foodInSnake = true;
-                outerLoop:
-                while (foodInSnake) {
-                    food.x = food.getLocation(ran.nextInt(40));
-                    food.y = food.getLocation(ran.nextInt(30));
-                    for (int i = 0; i < snake.tail.size() - 1; i += 2) {
-                        if (snake.tail.get(i) == food.x && snake.tail.get(i + 1) == food.y) {
-                            // Go to the beginning of the while.
-                            continue outerLoop;
-                        }
-                    }
-                    foodInSnake = false;
-                }
+                food.reset(snake.tail);
             }
 
             updateScore();
@@ -232,7 +214,7 @@ public class SnakeGame extends ApplicationAdapter {
             // Eating the tail.
             ateTail = snake.checkAteTail();
             // Update the high score.
-            if (ateTail ) {
+            if (ateTail) {
                 fileManager.update(snake.tail.size() / 2 - 1);
                 snake.restart();
             }
@@ -260,10 +242,12 @@ public class SnakeGame extends ApplicationAdapter {
         scoreLabel.setText(strB);
     }
 
+
     @Override
     public void resize(int x, int y) {
 
     }
+
 
     @Override
     public void dispose () {
@@ -271,4 +255,5 @@ public class SnakeGame extends ApplicationAdapter {
         stage.dispose();
         ftfg.dispose();
     }
+
 }

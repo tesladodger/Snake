@@ -1,12 +1,10 @@
 package com.tesladodger.snake.objects;
 
-import com.badlogic.gdx.Gdx;
-
 import java.util.List;
 
 
 public final class Snake {
-    public final int side = Gdx.graphics.getHeight() / 30;
+    public final int side = 16;
     public int x;
     public int y;
     public int moveX;
@@ -18,14 +16,14 @@ public final class Snake {
 
 
     // Constructor function.
-    public Snake(int direction, int magnitude, int ranX, int ranY) {
-        if (direction == 0) {
-            this.moveX = magnitude * side;
+    public Snake(int dir, int mag, int x, int y) {
+        if (dir == 0) {
+            moveX = mag * side;
         } else {
-            this.moveY = magnitude * side;
+            moveY = mag * side;
         }
-        x = ranX * side;
-        y = ranY * side;
+        this.x = x * side;
+        this.y = y * side;
     }
 
 
@@ -46,13 +44,15 @@ public final class Snake {
 
             // Move every coordinate two places to the front, overwriting the tip.
             for (int i = 0; i < tail.size() - 2; i++) {
-                tail.set(i, tail.get(i + 2));
+                tail.set(i, tail.get(i+2));
             }
 
             // Set the end to the coordinates of the new head.
             tail.set(tail.size() - 2, x);
             tail.set(tail.size() - 1, y);
         }
+
+        checkBounds();
     }
 
 
@@ -62,14 +62,14 @@ public final class Snake {
          * side, in order to not have two moves in one turn and not be out of      *
          * bounds for the AI grid.                                                 */
         for (int i = tail.size() - 1; i >= 2; i--) {
-            tail.set(i, tail.get(i - 2));
+            tail.set(i, tail.get(i-2));
         }
         tail.set(0, prevLastTipX);
         tail.set(1, prevLastTipY);
     }
 
 
-    public final void checkBounds() {
+    private void checkBounds() {
         if (x >= 640) {
             // Go to previous position.
             goBack();

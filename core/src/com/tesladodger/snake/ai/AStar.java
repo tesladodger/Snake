@@ -17,7 +17,7 @@ import java.util.Map;
  * https://youtu.be/aKYlikFAV4k                                                                   *
  *                                                                                                *
  *  I'm using a Hash Map to get to the nodes. It's not actually faster because the grid is very   *
- * small, I just didn't like creating unnecessary Node objects.                                   *
+ * small, but I didn't like creating unnecessary Node objects, so I create an unnecessary map.    *
  *  The openSet, closedSet and path all contain the node IDs in the map.                          *
  *                                                                                                *
  *  What the algorithm ultimately does is search for the shortest path to the food, around some   *
@@ -41,16 +41,13 @@ import java.util.Map;
  *                                                        goal, it is the shortest distance to any*
  * goal. So I just calculate the distance to every goal and return the minimum value.             *
  *  Using the Manhattan distance is the obvious choice for a square grid with no diagonals.       *
- *                                                                                                *
- *  The survive mode happens when the moveQueue returns empty. Instead of searching for food, the *
- * goals are every node neighboring the head:                                                     *
- *  ___________                                                                                   *
- * | 2 | 4 | 7 |   The algorithm favors the negative x and y directions, making a zigzag pattern. *
- * |___|___|___|   If the snake or the food is trapped the makes it avoid the tail, sometimes long*
- * | 1 | h | 6 |  enough so that a solution can be found.                                         *
- * |___|___|___|                                                                                  *
- * | 0 | 3 | 5 |                                                                                  *
- * |___|___|___|                                                                                  */
+ *      ___                                                                                       *
+ *     | 2 |       The survive mode happens when the moveQueue return empty. Instead of searching *
+ *  ___|___|___   for food, the goal are the nodes neighboring the head.                          *
+ * | 0 | h | 3 |   The algorithm favors the negative y and x directions, causing the snake to move*
+ * |___|___|___|  in a zigzag pattern.                                                            *
+ *     | 1 |       If the snake or the food are trapped, this makes it avoid the tail, sometimes  *
+ *     |___|      long enough for a solution to be found.                                         */
 
 
 public final class AStar {
@@ -143,7 +140,8 @@ public final class AStar {
     public Deque<Integer> algorithm(int foodX, int foodY, List<Integer> snake, boolean survive) {
 
 
-        // Initialize the nodes and add their ID to the HashMap.
+        /*  Initialize the nodes and add their ID to the HashMap. The IDs go   *
+         * from left to right, bottom to top (why the loops are inverted).     */
         int ID = 0;
         for (int j = 0; j < 90; j++) {
             for (int i = 0; i < 120; i++) {
@@ -159,25 +157,21 @@ public final class AStar {
         food[1] = foodY / 16;
         if (survive) {
             // The food is actually the head.
-            gridMap.get( (food[0] + 39) + 120 * (food[1] + 29) ).isGoal = true;  // 0
-            gridMap.get( (food[0] + 39) + 120 * (food[1] + 30) ).isGoal = true;  // 1
-            gridMap.get( (food[0] + 39) + 120 * (food[1] + 31) ).isGoal = true;  // 2
-            gridMap.get( (food[0] + 40) + 120 * (food[1] + 29) ).isGoal = true;  // 3
-            gridMap.get( (food[0] + 40) + 120 * (food[1] + 31) ).isGoal = true;  // 4
-            gridMap.get( (food[0] + 41) + 120 * (food[1] + 29) ).isGoal = true;  // 5
-            gridMap.get( (food[0] + 41) + 120 * (food[1] + 30) ).isGoal = true;  // 6
-            gridMap.get( (food[0] + 41) + 120 * (food[1] + 31) ).isGoal = true;  // 7
+            gridMap.get( (food[0] + 39) + 120 * (food[1] + 30) ).isGoal = true;  // 0
+            gridMap.get( (food[0] + 40) + 120 * (food[1] + 29) ).isGoal = true;  // 1
+            gridMap.get( (food[0] + 40) + 120 * (food[1] + 31) ).isGoal = true;  // 2
+            gridMap.get( (food[0] + 41) + 120 * (food[1] + 30) ).isGoal = true;  // 3
         }
         else {
-            gridMap.get((food[0] + 40) + 120 * (food[1] + 30)).isGoal = true;  // 0
-            gridMap.get((food[0] + 80) + 120 * (food[1] + 30)).isGoal = true;  // 1
-            gridMap.get((food[0] + 40) + 120 * (food[1] + 60)).isGoal = true;  // 2
-            gridMap.get((food[0]     ) + 120 * (food[1] + 30)).isGoal = true;  // 3
-            gridMap.get((food[0] + 40) + 120 * (food[1]     )).isGoal = true;  // 4
-            gridMap.get((food[0]     ) + 120 * (food[1]     )).isGoal = true;  // 5
-            gridMap.get((food[0] + 80) + 120 * (food[1]     )).isGoal = true;  // 6
-            gridMap.get((food[0] + 80) + 120 * (food[1] + 60)).isGoal = true;  // 7
-            gridMap.get((food[0]     ) + 120 * (food[1] + 60)).isGoal = true;  // 8
+            gridMap.get( (food[0] + 40) + 120 * (food[1] + 30) ).isGoal = true;  // 0
+            gridMap.get( (food[0] + 80) + 120 * (food[1] + 30) ).isGoal = true;  // 1
+            gridMap.get( (food[0] + 40) + 120 * (food[1] + 60) ).isGoal = true;  // 2
+            gridMap.get( (food[0]     ) + 120 * (food[1] + 30) ).isGoal = true;  // 3
+            gridMap.get( (food[0] + 40) + 120 * (food[1]     ) ).isGoal = true;  // 4
+            gridMap.get( (food[0]     ) + 120 * (food[1]     ) ).isGoal = true;  // 5
+            gridMap.get( (food[0] + 80) + 120 * (food[1]     ) ).isGoal = true;  // 6
+            gridMap.get( (food[0] + 80) + 120 * (food[1] + 60) ).isGoal = true;  // 7
+            gridMap.get( (food[0]     ) + 120 * (food[1] + 60) ).isGoal = true;  // 8
         }
 
 
@@ -193,31 +187,31 @@ public final class AStar {
             int bitX = snake.get(i)/16;
             int bitY = snake.get(i+1)/16;
             if (manhattanDist(tempHeadX, tempHeadY, bitX   , bitY   ) <= i / 2 + 1) {
-                gridMap.get( (bitX + 40) + 120 * (bitY + 30) ).isObstacle = true;  // 0
+                gridMap.get( (bitX + 40) + 120 * (bitY + 30) ).isObstacle = true;     // 0
             }
             if (manhattanDist(tempHeadX, tempHeadY, bitX+40, bitY   ) <= i / 2 + 1) {
-                gridMap.get( (bitX + 80) + 120 * (bitY + 30) ).isObstacle = true;  // 1
+                gridMap.get( (bitX + 80) + 120 * (bitY + 30) ).isObstacle = true;     // 1
             }
             if (manhattanDist(tempHeadX, tempHeadY, bitX   , bitY+30) <= i / 2 + 1) {
-                gridMap.get( (bitX + 40) + 120 * (bitY + 60) ).isObstacle = true;  // 2
+                gridMap.get( (bitX + 40) + 120 * (bitY + 60) ).isObstacle = true;     // 2
             }
             if (manhattanDist(tempHeadX, tempHeadY, bitX-40, bitY   ) <= i / 2 + 1) {
-                gridMap.get( (bitX     ) + 120 * (bitY + 30) ).isObstacle = true;  // 3
+                gridMap.get( (bitX     ) + 120 * (bitY + 30) ).isObstacle = true;     // 3
             }
             if (manhattanDist(tempHeadX, tempHeadY, bitX   , bitY-30) <= i / 2 + 1) {
-                gridMap.get( (bitX + 40) + 120 * (bitY     ) ).isObstacle = true;  // 4
+                gridMap.get( (bitX + 40) + 120 * (bitY     ) ).isObstacle = true;     // 4
             }
             if (manhattanDist(tempHeadX, tempHeadY, bitX-40, bitY-30) <= i / 2 + 1) {
-                gridMap.get( (bitX     ) + 120 * (bitY     ) ).isObstacle = true;  // 5
+                gridMap.get( (bitX     ) + 120 * (bitY     ) ).isObstacle = true;     // 5
             }
             if (manhattanDist(tempHeadX, tempHeadY, bitX+40, bitY-30) <= i / 2 + 1) {
-                gridMap.get( (bitX + 80) + 120 * (bitY     ) ).isObstacle = true;  // 6
+                gridMap.get( (bitX + 80) + 120 * (bitY     ) ).isObstacle = true;     // 6
             }
             if (manhattanDist(tempHeadX, tempHeadY, bitX+40, bitY+30) <= i / 2 + 1) {
-                gridMap.get( (bitX + 80) + 120 * (bitY + 60) ).isObstacle = true;  // 7
+                gridMap.get( (bitX + 80) + 120 * (bitY + 60) ).isObstacle = true;     // 7
             }
             if (manhattanDist(tempHeadX, tempHeadY, bitX-40, bitY+30) <= i / 2 + 1) {
-                gridMap.get( (bitX     ) + 120 * (bitY + 60) ).isObstacle = true;  // 8
+                gridMap.get( (bitX     ) + 120 * (bitY + 60) ).isObstacle = true;     // 8
             }
         }
 
