@@ -63,10 +63,14 @@ public final class AStar {
     private int[] food = new int[2];
 
 
+    /**
+     * Method that goes through the cameFrom node IDs and reconstructs the path. The deque is being
+     * used as a stack, so that the returned sequence is in the correct order, i.e. from head to
+     * the food.
+     * @param current the last node to be evaluated, which is the goal node;
+     * @return a deque of node IDs, from the head to the goal;
+     */
     private Deque<Integer> reconstructPath(int current) {
-        /*  This method goes through the cameFrom node IDs and reconstructs    *
-         * a path. The Deque is being used as a Stack, so that the returned    *
-         * sequence is in the correct order, i.e. from head to food.           */
         path.clear();
 
         int temp = current;
@@ -80,9 +84,11 @@ public final class AStar {
     }
 
 
+    /**
+     * Method to turn the path of node IDs into actual moves, using the x and y values.
+     * @return the move queue;
+     */
     private Deque<Integer> convertToMoves() {
-        /*  Turn the path of IDs into actual moves, using the x and y values of*
-         * the nodes.                                                          */
         int temp;
 
         // Because I'm shrinking the path deque, I need to save the size.
@@ -107,14 +113,29 @@ public final class AStar {
     }
 
 
+    /**
+     * Calculates the Manhattan distance.
+     * @param x1 coordinate;
+     * @param y1 coordinate;
+     * @param x2 coordinate;
+     * @param y2 coordinate;
+     * @return distance;
+     */
     private int manhattanDist(int x1, int y1, int x2, int y2) {
         return Math.abs(x2 - x1) + Math.abs(y2 - y1);
     }
 
 
+    /**
+     * Method to calculate the distance to the closest goal for a given node, the heuristic of that
+     * node.
+     * @param startX coordinate;
+     * @param startY coordinate;
+     * @param goalX coordinate;
+     * @param goalY coordinate;
+     * @return heuristic;
+     */
     private int calculateHeuristic(int startX, int startY, int goalX, int goalY) {
-        /*  This method returns the distance to the closest goal, for a given  *
-         * node, i.e. the heuristic of that node.                              */
         int[] distances = new int[9];
         distances[0] = manhattanDist(startX, startY, goalX+40, goalY+30);
         distances[1] = manhattanDist(startX, startY, goalX+80, goalY+30);
@@ -136,7 +157,14 @@ public final class AStar {
     }
 
 
-    // Main algorithm function. _________________________________________________________________ //
+    /**
+     * Main method of the A* algorithm.
+     * @param foodX coordinate;
+     * @param foodY coordinate;
+     * @param snake coordinates of the tail;
+     * @param survive boolean, survive mode;
+     * @return moveQueue;
+     */
     public Deque<Integer> algorithm(int foodX, int foodY, List<Integer> snake, boolean survive) {
 
 

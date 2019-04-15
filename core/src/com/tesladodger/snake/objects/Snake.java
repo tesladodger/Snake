@@ -15,7 +15,13 @@ public final class Snake {
     public boolean justAte;
 
 
-    // Constructor function.
+    /**
+     * Constructor.
+     * @param dir random initial direction;
+     * @param mag random initial magnitude;
+     * @param x random initial position;
+     * @param y random initial position;
+     */
     public Snake(int dir, int mag, int x, int y) {
         if (dir == 0) {
             moveX = mag * side;

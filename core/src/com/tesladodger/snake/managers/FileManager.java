@@ -16,6 +16,9 @@ public final class FileManager {
     private boolean showFPS;
 
 
+    /**
+     * Method to check the existence of the configuration file, read it or create it.
+     */
     public void setup() {
         boolean fileExists = new File("snake.conf").isFile();
         if (!fileExists) {
@@ -107,6 +110,10 @@ public final class FileManager {
     }
 
 
+    /**
+     * Method to update the conf file when the snake dies.
+     * @param score of the game;
+     */
     public void update(int score) {
         if (score > hs) {
             hs = score;

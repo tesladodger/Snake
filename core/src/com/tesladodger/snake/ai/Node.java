@@ -20,15 +20,22 @@ final class Node {
     List<Integer> neighbors = new ArrayList<Integer>();
     Integer cameFrom;
 
+    /**
+     * Method to add the IDs of this node's neighbors to the array.
+     */
     final void addNeighbors() {
-        // This method adds the IDs of this node's neighbors to the array.
         if (x < 119) neighbors.add(nodeID + 1);    // Right
         if (x > 0  ) neighbors.add(nodeID - 1);    // Left
         if (y < 89 ) neighbors.add(nodeID + 120);  // Top
         if (y > 0  ) neighbors.add(nodeID - 120);  // Bottom
     }
 
-    // Node constructor.
+    /**
+     * Constructor.
+     * @param nodeID every node is assigned an ID when constructed;
+     * @param x coordinate;
+     * @param y coordinate;
+     */
     Node(int nodeID, int x, int y) {
         this.nodeID = nodeID;
         this.x = x;

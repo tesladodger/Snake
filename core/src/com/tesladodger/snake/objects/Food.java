@@ -9,10 +9,13 @@ public final class Food {
     public int y;
 
 
+    /**
+     * Method set the food in a random position and prevent it from appearing where the snake is.
+     * @param tail coordinates of the tail;
+     */
     public final void reset(List<Integer> tail) {
         Random ran = new Random();
 
-        // Don't allow the next food to be where the snake is.
         boolean foodInSnake = true;
         outerLoop:
         while (foodInSnake) {

@@ -132,22 +132,22 @@ public class SnakeGame extends ApplicationAdapter {
         shapeRenderer.end();
 
         // Check user input.
-        if (Gdx.input.isKeyPressed(Keys.DPAD_LEFT) && snake.moveX == 0 && !buttonPressed && !aiMode) {
+        if (Gdx.input.isKeyJustPressed(Keys.DPAD_LEFT) && snake.moveX == 0 && !buttonPressed && !aiMode) {
             snake.moveX = - snake.side;
             snake.moveY = 0;
             buttonPressed = true;
         }
-        else if (Gdx.input.isKeyPressed(Keys.DPAD_RIGHT) && snake.moveX == 0 && !buttonPressed && !aiMode) {
+        else if (Gdx.input.isKeyJustPressed(Keys.DPAD_RIGHT) && snake.moveX == 0 && !buttonPressed && !aiMode) {
             snake.moveX = snake.side;
             snake.moveY = 0;
             buttonPressed = true;
         }
-        else if (Gdx.input.isKeyPressed(Keys.DPAD_UP) && snake.moveY == 0 && !buttonPressed && !aiMode) {
+        else if (Gdx.input.isKeyJustPressed(Keys.DPAD_UP) && snake.moveY == 0 && !buttonPressed && !aiMode) {
             snake.moveX = 0;
             snake.moveY = snake.side;
             buttonPressed = true;
         }
-        else if (Gdx.input.isKeyPressed(Keys.DPAD_DOWN) && snake.moveY == 0 && !buttonPressed && !aiMode) {
+        else if (Gdx.input.isKeyJustPressed(Keys.DPAD_DOWN) && snake.moveY == 0 && !buttonPressed && !aiMode) {
             snake.moveX = 0;
             snake.moveY = - snake.side;
             buttonPressed = true;
