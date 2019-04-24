@@ -21,16 +21,6 @@ final class Node {
     Integer cameFrom;
 
     /**
-     * Method to add the IDs of this node's neighbors to the array.
-     */
-    final void addNeighbors() {
-        if (x < 119) neighbors.add(nodeID + 1);    // Right
-        if (x > 0  ) neighbors.add(nodeID - 1);    // Left
-        if (y < 89 ) neighbors.add(nodeID + 120);  // Top
-        if (y > 0  ) neighbors.add(nodeID - 120);  // Bottom
-    }
-
-    /**
      * Constructor.
      * @param nodeID every node is assigned an ID when constructed;
      * @param x coordinate;

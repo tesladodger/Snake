@@ -127,6 +127,26 @@ public final class AStar {
 
 
     /**
+     * Adds the IDs of the neighbors to the list of a node.
+     * @param nodeID of the node to add neighbors;
+     */
+    private void addNeighbors(int nodeID) {
+        if (gridMap.get(nodeID).x < 119) {
+            gridMap.get(nodeID).neighbors.add(nodeID + 1);  // Right
+        }
+        if (gridMap.get(nodeID).x > 0) {
+            gridMap.get(nodeID).neighbors.add(nodeID - 1);  // Left
+        }
+        if (gridMap.get(nodeID).y < 89) {
+            gridMap.get(nodeID).neighbors.add(nodeID + 120);  // Top
+        }
+        if (gridMap.get(nodeID).y > 0) {
+            gridMap.get(nodeID).neighbors.add(nodeID - 120);  // Bottom
+        }
+    }
+
+
+    /**
      * Method to calculate the distance to the closest goal for a given node, the heuristic of that
      * node.
      * @param startX coordinate;
@@ -291,7 +311,7 @@ public final class AStar {
             openSet.remove(indexLowestF);
 
             // Set the neighbors of current.
-            gridMap.get(current).addNeighbors();
+            addNeighbors(current);
 
             // For every neighbor of current:
             for (int i = 0; i < gridMap.get(current).neighbors.size(); i++) {
